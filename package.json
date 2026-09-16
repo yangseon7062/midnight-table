@@ -9,7 +9,9 @@
     "build": "vite build --config client/vite.config.ts",
     "start": "tsx server/src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:e2e": "node tests/run-all.mjs"
+    "test:e2e": "node tests/run-all.mjs",
+    "test": "node tests/run-all.mjs",
+    "serve": "npm run build && npm start"
   },
   "engines": {
     "node": ">=20"
