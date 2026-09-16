@@ -69,6 +69,7 @@ check(A.state.stage === 'flow', '진행 시작');
 // B가 1단계 자료를 열고 연결 끊김
 for (const key of B.state.step.myItemKeys) await call(B.s, 'g:action', { type: 'open', payload: { key } });
 await call(B.s, 'g:action', { type: 'useCard', payload: { cardId: 'secretary-note' } }).catch(() => {});
+await sleep(300);
 const bCardsBefore = B.state.cards.map((c) => `${c.id}:${c.usesLeft}`).join(',');
 const bToken = B.token;
 B.s.disconnect();
