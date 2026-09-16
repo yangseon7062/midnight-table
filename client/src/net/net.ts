@@ -217,3 +217,7 @@ socket.on('toast', (p) => toast(p.text, p.tone));
 socket.on('kicked', (p) => { kickedReason.value = p.reason; });
 
 export function boot() { socket.connect(); }
+
+// 자동 테스트/디버그용 핸들
+(window as any).__members = members;
+(window as any).__me = () => me.value?.userId;

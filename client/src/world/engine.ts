@@ -138,10 +138,18 @@ export class WorldEngine {
     for (const t of this.map.tables) t.seats.forEach((s, i) => {
       if (Math.hypot(s.x - w.x, s.y - 8 - w.y) < 12) { w.x = s.x; w.y = s.y; this.pendingSeat = { tableId: t.id, index: i }; }
     });
-    const p = this.findPath(mine.x, mine.y, w.x, w.y);
-    if (p) { this.path = p; this.clickMarker = { x: w.x, y: w.y, t: performance.now() }; sfx.click(); }
-    else { this.pendingSeat = null; }
+    if (!this.goTo(w.x, w.y)) this.pendingSeat = null;
   };
+
+  /** 목적지까지 길찾기 이동 (클릭 이동과 동일한 경로) */
+  goTo(x: number, y: number) {
+    const mine = this.self();
+    if (!mine) return false;
+    const p = this.findPath(mine.x, mine.y, x, y);
+    if (!p) return false;
+    this.path = p; this.clickMarker = { x, y, t: performance.now() }; sfx.click();
+    return true;
+  }
 
   /** 8px 격자 A* */
   private findPath(sx: number, sy: number, tx: number, ty: number) {
