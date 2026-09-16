@@ -49,6 +49,8 @@ export interface MemberView {
   disconnectedAt: number | null;
   /** 게임 모듈이 붙여주는 이름표 부가 라벨 (예: 배역 이름) */
   badge: string | null;
+  /** 지금 무엇을 하는 중인지 나타내는 작은 아이콘 (예: 📖 읽는 중). 모듈이 정하지만 로비는 의미를 모른다 */
+  activity: string | null;
   /** 게임 참가자 여부 (게임 중일 때) */
   role: 'player' | 'spectator' | 'idle';
 }
@@ -131,6 +133,7 @@ export interface RoomSnapshot {
 export type MoveTuple = [userId: string, x: number, y: number, facing: number, moving: 0 | 1];
 
 export const FACINGS: Facing[] = ['down', 'up', 'left', 'right'];
+export const ACTIVITY_ICONS = ['📖', '🔎', '✉️', '🗳️', '🃏', '💬'];
 
 export const LIMITS = {
   nicknameMax: 12,
@@ -153,6 +156,7 @@ export interface C2S {
   'chat:send': (p: { text: string }, ack: (r: Result) => void) => void;
   'mic': (p: { state: MicState }) => void;
   'emote': (p: { e: string }) => void;
+  'activity': (p: { a: string | null }) => void;
   'table:select': (p: { moduleId: string; contentId: string }, ack: (r: Result) => void) => void;
   'table:ready': (p: { ready: boolean }, ack: (r: Result) => void) => void;
   'v:signal': (p: { to: string; data: unknown }) => void;

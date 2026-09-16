@@ -9,7 +9,8 @@ import { audioCtx, audioPrefs } from './sfx';
  * 마이크 on/off 는 replaceTrack 으로 재협상 없이 전환하고, 상태는 서버를 통해 모두에게 표시된다.
  */
 
-const ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+let ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+fetch('/api/config').then((r) => r.json()).then((c) => { if (Array.isArray(c.iceServers)) ICE = c.iceServers; }).catch(() => {});
 
 interface Peer {
   id: string;
@@ -142,6 +143,12 @@ bus.on('room:left', () => { for (const id of [...peers.keys()]) closePeer(id); w
 
 export async function setMic(on: boolean) {
   if (on) {
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      micState.value = 'none';
+      toast('이 주소에서는 브라우저가 마이크를 막습니다. https 주소(또는 localhost)로 접속해야 음성을 쓸 수 있어요. 텍스트 채팅은 그대로 가능합니다.', 'warn');
+      socket.emit('mic', { state: 'none' });
+      return;
+    }
     try {
       if (!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });

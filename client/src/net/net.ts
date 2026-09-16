@@ -221,3 +221,11 @@ export function boot() { socket.connect(); }
 // 자동 테스트/디버그용 핸들
 (window as any).__members = members;
 (window as any).__me = () => me.value?.userId;
+
+let lastActivity: string | null = null;
+/** 모듈이 "지금 무엇을 하는 중"을 알린다 (다른 참가자 머리 위 작은 아이콘) */
+export function setActivity(a: string | null) {
+  if (a === lastActivity) return;
+  lastActivity = a;
+  socket.emit('activity', { a });
+}

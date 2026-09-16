@@ -171,6 +171,7 @@ export class RoomManager {
     socket.on('chat:send', safe((p, ack) => { const u = need(); if (!room) return ack({ ok: false, error: '방에 없습니다' }); const e = room.chat(u.userId, p?.text); ack(e ? { ok: false, error: e } : { ok: true }); }));
     socket.on('mic', (p) => { if (user && room) room.setMic(user.userId, p?.state); });
     socket.on('emote', (p) => { if (user && room) room.emote(user.userId, p?.e); });
+    socket.on('activity', (p) => { if (user && room) room.setActivity(user.userId, p?.a); });
     socket.on('table:select', safe((p, ack) => { const u = need(); if (!room) return ack({ ok: false, error: '방에 없습니다' }); const e = room.tableSelect(u.userId, p?.moduleId, p?.contentId); ack(e ? { ok: false, error: e } : { ok: true }); }));
     socket.on('table:ready', safe((p, ack) => { const u = need(); if (!room) return ack({ ok: false, error: '방에 없습니다' }); const e = room.tableReady(u.userId, !!p?.ready); ack(e ? { ok: false, error: e } : { ok: true }); }));
     socket.on('v:signal', (p) => { if (user && room) room.relaySignal(user.userId, p?.to, p?.data); });

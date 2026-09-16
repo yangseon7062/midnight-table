@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import type { MMItemView } from '@shared/mm/view';
-import { bus, toast } from '../../net/net';
+import { bus, toast, setActivity } from '../../net/net';
 import { sfx } from '../../audio/sfx';
 import { view } from './util';
 import { Casting } from './Casting';
@@ -11,6 +11,8 @@ import { EvidenceBoard, EvidenceViewer } from './Evidence';
 import { CardHand, CardSpotlight } from './Cards';
 import { VoteBoard } from './Vote';
 import { Ending } from './Ending';
+import { Guide } from './Guide';
+import { storage } from '../../net/net';
 
 type Panel = { kind: 'none' } | { kind: 'envelope'; stepIndex: number } | { kind: 'dossier'; key?: string } | { kind: 'evidence' } | { kind: 'viewer'; key: string } | { kind: 'log' };
 
@@ -20,6 +22,10 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
   const [transition, setTransition] = useState<{ index: number; title: string; stepType: string; kind: string | null; received: number } | null>(null);
   const [voteMin, setVoteMin] = useState(false);
   const [endingMin, setEndingMin] = useState(false);
+  const [guide, setGuide] = useState(false);
+  useEffect(() => {
+    if (v.stage === 'flow' && v.me.participant && !storage.getPref('guideSeen', false)) setGuide(true);
+  }, [v.stage]);
 
   const bundles: Bundle[] = useMemo(() => {
     const map = new Map<number, Bundle>();
@@ -54,7 +60,12 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
   }, [v.items.length, props.engine]);
 
   const isVote = v.stage === 'flow' && v.step?.kind === 'vote' && v.me.participant;
-  const blocking = panel.kind !== 'none' || v.stage === 'casting' || (isVote && !voteMin) || (v.stage === 'ending' && !endingMin);
+  useEffect(() => {
+    const a = panel.kind === 'envelope' ? '✉️' : panel.kind === 'dossier' || panel.kind === 'log' ? '📖' : panel.kind === 'evidence' || panel.kind === 'viewer' ? '🔎' : isVote && !voteMin ? '🗳️' : null;
+    setActivity(v.me.participant ? a : null);
+  }, [panel.kind, isVote, voteMin]);
+  useEffect(() => () => setActivity(null), []);
+  const blocking = guide || panel.kind !== 'none' || v.stage === 'casting' || (isVote && !voteMin) || (v.stage === 'ending' && !endingMin);
   useEffect(() => {
     if (!props.engine) return;
     props.engine.inputBlocked = () => blocking;
@@ -93,6 +104,9 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
           <button class="rail-btn" onClick={() => setPanel({ kind: 'evidence' })} title="단서 보드">
             <span class="ico">🔎</span><span class="pixel tiny">단서 {clues.length}</span>
             {unopenedClues > 0 && <b class="badge">{unopenedClues}</b>}
+          </button>
+          <button class="rail-btn" onClick={() => setGuide(true)} title="진행 안내">
+            <span class="ico">❔</span><span class="pixel tiny">안내</span>
           </button>
           <button class="rail-btn" onClick={() => setPanel({ kind: 'log' })} title="진행 기록">
             <span class="ico">🕰</span><span class="pixel tiny">기록</span>
@@ -134,6 +148,7 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
       {v.stage === 'ending' && v.ending && <Ending minimized={endingMin} onToggle={() => setEndingMin(!endingMin)} />}
 
       <CardSpotlight />
+      {guide && !transition && <Guide onClose={() => { setGuide(false); storage.setPref('guideSeen', true); }} />}
 
       {transition && (
         <div class="step-transition" onClick={() => setTransition(null)}>

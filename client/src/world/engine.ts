@@ -473,6 +473,13 @@ export class WorldEngine {
       g.fill();
       if (m.mic !== 'on') { g.strokeStyle = '#efe6cf'; g.lineWidth = 1.2 * dpr; g.beginPath(); g.moveTo(mx - 3 * dpr, my - 3 * dpr); g.lineTo(mx + 3 * dpr, my + 3 * dpr); g.stroke(); }
 
+      if (m.activity && m.connected) {
+        const ax = x + boxW / 2 + 12 * dpr, ay = by + boxH / 2;
+        g.fillStyle = 'rgba(14,11,16,0.85)';
+        g.beginPath(); g.arc(ax, ay, 11 * dpr, 0, Math.PI * 2); g.fill();
+        g.font = `${Math.round(13 * dpr)}px sans-serif`;
+        g.fillText(m.activity, ax, ay + 1 * dpr + Math.sin(t * 4) * 1 * dpr);
+      }
       if (!m.connected) {
         const left = m.disconnectedAt ? Math.max(0, grace - (nowS - m.disconnectedAt)) : 0;
         const txt = left > 0 ? `연결 끊김 · ${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}` : '부재 중';

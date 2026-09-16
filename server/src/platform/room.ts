@@ -2,7 +2,7 @@ import type { Server } from 'socket.io';
 import type {
   ChatMessage, Facing, MemberView, MicState, RoomSnapshot, RoomSummary, TableView, ZoneDef, ZoneView, MoveTuple,
 } from '../../../shared/platform';
-import { FACINGS, LIMITS } from '../../../shared/platform';
+import { FACINGS, LIMITS, ACTIVITY_ICONS } from '../../../shared/platform';
 import { MAPS, MOVE_SPEED, pathClear, zoneAt, nearestFree, type MapDef } from '../../../shared/world';
 import type { AvatarLook } from '../../../shared/platform';
 import type { GameHost, GameModuleDefinition, GameSession } from './gameModule';
@@ -28,6 +28,7 @@ export interface Member {
   disconnectedAt: number | null;
   absent: boolean;
   badge: string | null;
+  activity: string | null;
   zoneId: string | null;
   joinedAt: number;
 }
@@ -104,7 +105,7 @@ export class Room {
     return {
       userId: m.userId, nickname: m.nickname, look: m.look, x: Math.round(m.x * 10) / 10, y: Math.round(m.y * 10) / 10, facing: m.facing,
       moving: m.moving, seat: m.seat, mic: m.mic, connected: m.connected, disconnectedAt: m.disconnectedAt,
-      badge: m.badge, role: this.roleOf(m.userId),
+      badge: m.badge, activity: m.activity ?? null, role: this.roleOf(m.userId),
     };
   }
 
@@ -151,7 +152,7 @@ export class Room {
       m = {
         userId: user.userId, nickname: user.nickname, look: user.look, x: spawn.x, y: spawn.y, facing: 'down', moving: false,
         moveBudget: 0, lastMoveAt: Date.now(), seat: null, mic: 'off', socketId, connected: true, disconnectedAt: null,
-        absent: false, badge: null, zoneId: null, joinedAt: Date.now(),
+        absent: false, badge: null, activity: null, zoneId: null, joinedAt: Date.now(),
       };
       this.members.set(user.userId, m);
     }
@@ -183,7 +184,7 @@ export class Room {
       this.removeMember(m, `${m.nickname}님이 퇴장했습니다.`);
       return;
     }
-    m.connected = false; m.socketId = null; m.disconnectedAt = Date.now(); m.moving = false;
+    m.connected = false; m.socketId = null; m.disconnectedAt = Date.now(); m.moving = false; m.activity = null;
     if (m.mic === 'on') m.mic = 'off';
     if (reason === 'leave') { m.absent = true; }
     this.deps.io.to(this.channelKey).emit('room:member', this.memberView(m));
@@ -356,6 +357,15 @@ export class Room {
     }
   }
 
+  setActivity(userId: string, a: unknown) {
+    const m = this.members.get(userId);
+    if (!m) return;
+    const next = typeof a === 'string' && ACTIVITY_ICONS.includes(a) ? a : null;
+    if (m.activity === next) return;
+    m.activity = next;
+    this.deps.io.to(this.channelKey).emit('room:member', this.memberView(m));
+  }
+
   // ── 음성 (WebRTC 시그널링: 같은 채널끼리만 연결 허용) ──
   setMic(userId: string, state: unknown) {
     const m = this.members.get(userId);
@@ -468,7 +478,7 @@ export class Room {
     const participants = this.game.participants;
     this.game = null;
     this.zoneDefs = this.map.defaultZones; this.zonesOpen = true;
-    for (const m of this.members.values()) m.badge = null;
+    for (const m of this.members.values()) { m.badge = null; m.activity = null; }
     for (const uid of participants) {
       const m = this.members.get(uid);
       if (m && !m.connected && m.absent) this.members.delete(uid);

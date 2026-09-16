@@ -67,8 +67,14 @@ await A.page.waitForSelector('.step-transition', { timeout: 10000 });
 await sleep(700);
 await S(A.page, '15-transition');
 await A.page.waitForSelector('.step-transition', { state: 'detached', timeout: 6000 });
+await A.page.waitForSelector('.guide', { timeout: 3000 });
+await sleep(400);
+await S(A.page, '15b-guide');
+await dismissGuide(A); await dismissGuide(B);
 
+async function dismissGuide(pl) { const g = await pl.page.$('.guide button'); if (g) { await g.click(); await sleep(200); } }
 async function openEnvelope(pl, shotPrefix) {
+  await dismissGuide(pl);
   const btn = await pl.page.$('.mailbox');
   if (!btn) return false;
   await btn.click();
@@ -94,6 +100,7 @@ async function openEnvelope(pl, shotPrefix) {
 }
 async function closeSpread(pl) { const b = await pl.page.$('.spread button.btn.lg'); if (b) await b.click(); await sleep(300); }
 async function readyUp(pl) {
+  await dismissGuide(pl);
   const b = await pl.page.$('.phase-actions button.btn');
   if (!b) return false;
   const t = await b.textContent();
