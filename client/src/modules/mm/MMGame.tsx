@@ -64,7 +64,11 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
     const a = panel.kind === 'envelope' ? '✉️' : panel.kind === 'dossier' || panel.kind === 'log' ? '📖' : panel.kind === 'evidence' || panel.kind === 'viewer' ? '🔎' : isVote && !voteMin ? '🗳️' : null;
     setActivity(v.me.participant ? a : null);
   }, [panel.kind, isVote, voteMin]);
-  useEffect(() => () => setActivity(null), []);
+  useEffect(() => () => {
+    setActivity(null);
+    // 게임이 끝나 모듈이 내려가면 월드 조작/카메라를 원래대로
+    if (props.engine) { props.engine.inputBlocked = () => false; (props.engine as any).camLift = 0; props.engine.tableItems = 0; }
+  }, [props.engine]);
   const blocking = guide || panel.kind !== 'none' || v.stage === 'casting' || (isVote && !voteMin) || (v.stage === 'ending' && !endingMin);
   useEffect(() => {
     if (!props.engine) return;

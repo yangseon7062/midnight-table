@@ -279,6 +279,10 @@ await B.page.click('text=테이블 정리하고 방으로 돌아가기').catch(a
 await sleep(1500);
 const back = await A.page.$('.table-panel, .table-hint');
 check(!!back, '엔딩 후 방(대기 상태)으로 복귀');
+const before = await A.page.evaluate(() => { const m = window.__members.get(window.__me()); return { x: m.x, y: m.y }; });
+await A.page.keyboard.down('ArrowUp'); await sleep(700); await A.page.keyboard.up('ArrowUp');
+const after = await A.page.evaluate(() => { const m = window.__members.get(window.__me()); return { x: m.x, y: m.y }; });
+check(Math.hypot(after.x - before.x, after.y - before.y) > 5, '게임 종료 후 다시 캐릭터를 움직일 수 있음');
 await S(A.page, '38-back-to-room');
 console.log(fails ? `\n실패 ${fails}건` : '\n모든 UI 검사 통과');
 await browser.close();

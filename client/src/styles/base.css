@@ -43,7 +43,7 @@ input, textarea, select { font: inherit; color: var(--text); }
 .btn {
   font-family: var(--pixel); font-size: 13px; letter-spacing: 0.02em;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 9px 16px; border-radius: 8px; cursor: pointer; user-select: none;
+  padding: 9px 16px; border-radius: 8px; cursor: pointer; user-select: none; white-space: nowrap;
   background: linear-gradient(#2a2130, #1c1622); border: 1px solid var(--line-strong);
   box-shadow: 0 3px 0 #07060a, inset 0 1px 0 rgba(255, 255, 255, 0.06);
   transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s, filter 0.15s;
