@@ -46,6 +46,8 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
     return () => clearTimeout(t);
   }, [transition]);
 
+  useEffect(() => { if (props.engine) (props.engine as any).camLift = v.stage === 'flow' ? 40 : 0; }, [v.stage, props.engine]);
+
   // 테이블 위에 공개 자료가 쌓이는 모습 (월드)
   useEffect(() => {
     if (props.engine) props.engine.tableItems = Math.min(8, v.items.filter((i) => i.kind === 'common' || i.clue?.scope === 'public').length);

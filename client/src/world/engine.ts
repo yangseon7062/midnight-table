@@ -36,6 +36,8 @@ export class WorldEngine {
   private dust = Array.from({ length: 50 }, () => ({ x: Math.random() * 704, y: Math.random() * 512, vx: (Math.random() - 0.5) * 3, vy: -1 - Math.random() * 3, p: Math.random() }));
   private unsub: (() => void)[] = [];
   tableItems = 0;
+  /** 상단 HUD가 클 때 카메라를 위로 들어 올려 내 캐릭터와 말풍선이 가리지 않게 */
+  camLift = 0;
   nearSeat: { tableId: string; index: number; seat: Seat } | null = null;
   onNearSeat: ((s: WorldEngine['nearSeat']) => void) | null = null;
   inputBlocked = () => false;
@@ -283,7 +285,7 @@ export class WorldEngine {
     if (mine) {
       const k = Math.min(1, dt * 8);
       this.cam.x += (mine.rx - this.cam.x) * k;
-      this.cam.y += (mine.ry - 8 - this.cam.y) * k;
+      this.cam.y += (mine.ry - 8 - this.camLift - this.cam.y) * k;
     }
     const mw = this.map.cols * TILE, mh = this.map.rows * TILE;
     const hw = this.low.width / 2, hh = this.low.height / 2;

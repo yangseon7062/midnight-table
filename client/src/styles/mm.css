@@ -38,7 +38,7 @@
 .npc-strip { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; padding: 10px 16px; border-radius: 12px; background: rgba(0,0,0,0.3); }
 .npc { display: flex; gap: 8px; align-items: center; font-size: 13px; }
 .npc .portrait { width: 34px; border-radius: 4px; }
-.casting-foot { position: fixed; bottom: 0; left: 0; right: 0; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(transparent, rgba(0,0,0,0.9) 40%); }
+.casting-foot { position: fixed; bottom: 0; left: 400px; right: 0; padding: 14px 340px 14px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(transparent, rgba(0,0,0,0.9) 40%); }
 .countdown.big .num { font-size: 200px; }
 
 /* ── 진행 표시판 ── */
@@ -346,4 +346,16 @@
   @keyframes dropin { from { transform: translateY(-40px); opacity: 0; } }
   .people { top: 250px; }
   .mailbox { top: auto; bottom: 90px; right: 12px; }
+}
+
+/* ── 오버레이를 열어도 대화·타이머·마이크는 계속 보이게 (넓은 화면) ── */
+.chat, .controls { z-index: 58; }
+.room-screen.playing .phase-bar { z-index: 57; }
+@media (min-width: 1200px) {
+  .env-back, .dossier-back, .viewer-back, .vote-back { padding: 150px 16px 84px 404px; }
+  .ending-back { padding-left: 404px; }
+  .book { width: min(1060px, 100%); height: min(820px, calc(100vh - 250px)); }
+  .cork, .viewer, .vote-board, .spread { width: min(1100px, 100%); max-height: calc(100vh - 250px); }
+  .viewer-stage { height: min(52vh, 640px); }
+  .log-panel { max-height: calc(100vh - 260px); }
 }
