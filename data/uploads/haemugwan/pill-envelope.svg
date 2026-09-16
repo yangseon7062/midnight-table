@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" seed="4"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+    <linearGradient id="table" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a2f1d"/><stop offset="1" stop-color="#2a1a10"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#table)"/>
+  <g transform="rotate(-6 400 300)">
+    <rect x="170" y="90" width="420" height="430" rx="6" fill="#f4efe2"/>
+    <rect x="170" y="90" width="420" height="70" fill="#3b6ea5"/>
+    <text x="200" y="137" font-family="'Malgun Gothic', 'Noto Sans CJK KR', sans-serif" font-size="30" fill="#fff" font-weight="bold">동해 중앙약국 · 약봉투</text>
+    <g font-family="'Malgun Gothic', 'Noto Sans CJK KR', sans-serif" fill="#222">
+      <text x="200" y="210" font-size="30" font-weight="bold">한기현 님</text>
+      <text x="200" y="260" font-size="25">노르미날정 10mg × 30정</text>
+      <text x="200" y="302" font-size="22">1일 1회 취침 전 1정</text>
+      <text x="200" y="340" font-size="20" fill="#555">조제일 1987. 9. 14 / 처방: 백유리</text>
+      <text x="200" y="378" font-size="18" fill="#a33">※ 정해진 양 이상 복용하지 마십시오</text>
+    </g>
+    <rect x="170" y="90" width="420" height="430" fill="#000" filter="url(#grain)"/>
+    <path d="M170 520 L590 520 L590 490 Q380 470 170 500 Z" fill="#e2dccb"/>
+  </g>
+  <g>
+    <ellipse cx="610" cy="470" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/><ellipse cx="645" cy="490" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/>
+    <ellipse cx="620" cy="508" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/><ellipse cx="660" cy="455" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/>
+    <ellipse cx="682" cy="512" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/><ellipse cx="590" cy="500" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/>
+    <ellipse cx="700" cy="478" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/><ellipse cx="640" cy="530" rx="15" ry="9" fill="#fafafa" stroke="#bbb"/>
+  </g>
+  <rect x="520" y="40" width="250" height="60" fill="#f6e27a" transform="rotate(4 640 70)"/>
+  <text x="540" y="80" font-family="'Nanum Pen Script', Gungsuh, Batang, serif" font-size="28" fill="#333" transform="rotate(4 640 70)">남은 약: 8정</text>
+  <text x="30" y="580" font-family="Batang, serif" font-size="18" fill="#d8cbb5">증거 9 · 한기현의 객실 협탁 서랍 (9/18 03:45, 오정란 입회)</text>
+</svg>

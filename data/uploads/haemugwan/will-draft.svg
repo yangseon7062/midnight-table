@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 940" width="700" height="940">
+  <defs>
+    <filter id="aged"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="21"/><feColorMatrix values="0 0 0 0 0.5  0 0 0 0 0.4  0 0 0 0 0.25  0 0 0 0.25 0"/></filter>
+  </defs>
+  <rect width="700" height="940" fill="#f3eddc"/>
+  <rect width="700" height="940" filter="url(#aged)"/>
+  <path d="M0 470 H700" stroke="#cbbf9f" stroke-width="2" opacity="0.8"/>
+  <g font-family="Batang, 'Noto Serif CJK KR', serif" fill="#1f1f1f">
+    <text x="350" y="100" font-size="40" text-anchor="middle" letter-spacing="14" font-weight="bold">유 언 장</text>
+    <text x="350" y="140" font-size="18" text-anchor="middle" fill="#666">(초안 — 1987년 9월 18일 문재혁 변호사 입회 하에 정식 작성 예정)</text>
+    <text x="70" y="220" font-size="21">본인 한기욱은 맑은 정신으로 다음과 같이 유언한다.</text>
+    <text x="70" y="290" font-size="21">1. 본인이 소유한 미술품 일체(「해무」 포함 142점)는</text>
+    <text x="100" y="325" font-size="21">국립현대미술관에 기증한다.</text>
+    <text x="70" y="395" font-size="21">2. 해무관 저택과 부지는 본인의 아들</text>
+    <text x="100" y="430" font-size="21">강태오(姜太午)에게 상속한다.</text>
+    <text x="70" y="500" font-size="21">3. 조카 한서진에게는 복원 공방 운영 자금을 남긴다.</text>
+    <text x="70" y="570" font-size="21">4. 동생 한기현에게는 어떠한 재산도 상속하지 않는다.</text>
+    <text x="100" y="605" font-size="19" fill="#555">(이미 세 차례 채무를 대신 갚아 주었음을 밝혀 둔다)</text>
+    <text x="70" y="675" font-size="21">5. 오정란 집사에게 평생의 노고에 대한 위로금을 남긴다.</text>
+  </g>
+  <path d="M100 432 q60 18 180 -2" stroke="#1f2a55" stroke-width="2" fill="none"/>
+  <text x="300" y="455" font-family="'Nanum Pen Script', Gungsuh, serif" font-size="22" fill="#1f2a55" transform="rotate(-3 300 455)">← 내 아들. 이제야 말한다.</text>
+  <g transform="rotate(-12 520 810)">
+    <rect x="420" y="760" width="200" height="90" fill="none" stroke="#b3261e" stroke-width="5" rx="8"/>
+    <text x="520" y="822" font-family="Batang, serif" font-size="44" fill="#b3261e" text-anchor="middle" font-weight="bold" opacity="0.85">草 案</text>
+  </g>
+  <text x="70" y="880" font-family="Batang, serif" font-size="20" fill="#333">1987. 9. 17.   한 기 욱  (서명 전)</text>
+</svg>

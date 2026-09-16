@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" width="800" height="560">
+  <defs>
+    <filter id="ash"><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" seed="11"/><feColorMatrix values="0 0 0 0 0.1  0 0 0 0 0.09  0 0 0 0 0.08  0 0 0 0.55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+    <radialGradient id="burn" cx="0.15" cy="0.2" r="0.9"><stop offset="0.45" stop-color="#f2ead8" stop-opacity="0"/><stop offset="0.7" stop-color="#8a5a2a" stop-opacity="0.55"/><stop offset="0.9" stop-color="#2a1a10" stop-opacity="0.95"/></radialGradient>
+    <clipPath id="frag"><path d="M60 70 L240 40 L330 90 L470 55 L560 120 L600 210 L560 260 L610 330 L520 410 L430 380 L330 450 L220 400 L120 430 L90 330 L40 260 L80 180 Z"/></clipPath>
+  </defs>
+  <rect width="800" height="560" fill="#2b2622"/>
+  <rect width="800" height="560" fill="#111" filter="url(#ash)"/>
+  <g clip-path="url(#frag)">
+    <rect width="800" height="560" fill="#f2ead8"/>
+    <rect x="70" y="120" width="560" height="4" fill="#3b6ea5"/>
+    <g font-family="'Malgun Gothic', 'Noto Sans CJK KR', sans-serif" fill="#2b2b2b">
+      <text x="110" y="105" font-size="22" fill="#3b6ea5" font-weight="bold">동해 중앙약국</text>
+      <text x="110" y="185" font-size="40" font-weight="bold">…현 님</text>
+      <text x="110" y="245" font-size="30">노르미날정 10mg</text>
+      <text x="110" y="300" font-size="26">1일 1회  취침 전  1정</text>
+      <text x="110" y="350" font-size="22" fill="#666">조제일 1987. 9. 14</text>
+    </g>
+    <rect width="800" height="560" fill="url(#burn)"/>
+  </g>
+  <path d="M60 70 L240 40 L330 90 L470 55 L560 120 L600 210 L560 260 L610 330 L520 410 L430 380 L330 450 L220 400 L120 430 L90 330 L40 260 L80 180 Z" fill="none" stroke="#1a100a" stroke-width="7" opacity="0.8"/>
+  <g font-family="Batang, serif" fill="#d8cbb5" font-size="18">
+    <text x="30" y="530">증거 8 · 서재 벽난로 재 속에서 수거 (9/18 03:40)</text>
+  </g>
+</svg>

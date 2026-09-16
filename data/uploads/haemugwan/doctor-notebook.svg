@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 900" width="700" height="900">
+  <defs>
+    <filter id="paper"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="4" seed="8"/><feColorMatrix values="0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0.22 0"/></filter>
+    <filter id="ink"><feTurbulence type="fractalNoise" baseFrequency="0.8" seed="2"/><feDisplacementMap in="SourceGraphic" scale="1.6"/></filter>
+  </defs>
+  <rect width="700" height="900" fill="#efe6cf"/>
+  <rect width="700" height="900" filter="url(#paper)"/>
+  <g stroke="#9cb3c9" stroke-width="1.2" opacity="0.7">
+    <line x1="0" y1="150" x2="700" y2="150"/><line x1="0" y1="200" x2="700" y2="200"/><line x1="0" y1="250" x2="700" y2="250"/><line x1="0" y1="300" x2="700" y2="300"/>
+    <line x1="0" y1="350" x2="700" y2="350"/><line x1="0" y1="400" x2="700" y2="400"/><line x1="0" y1="450" x2="700" y2="450"/><line x1="0" y1="500" x2="700" y2="500"/>
+    <line x1="0" y1="550" x2="700" y2="550"/><line x1="0" y1="600" x2="700" y2="600"/><line x1="0" y1="650" x2="700" y2="650"/><line x1="0" y1="700" x2="700" y2="700"/>
+    <line x1="0" y1="750" x2="700" y2="750"/><line x1="0" y1="800" x2="700" y2="800"/><line x1="0" y1="850" x2="700" y2="850"/>
+  </g>
+  <line x1="90" y1="0" x2="90" y2="900" stroke="#d98a8a" stroke-width="2"/>
+  <circle cx="45" cy="120" r="12" fill="#cfc2a3"/><circle cx="45" cy="450" r="12" fill="#cfc2a3"/><circle cx="45" cy="780" r="12" fill="#cfc2a3"/>
+  <g font-family="'Nanum Pen Script', 'Gungsuh', 'Batang', 'Noto Serif CJK KR', serif" fill="#1f2a55" filter="url(#ink)">
+    <text x="110" y="90" font-size="34" font-weight="bold">왕진 수첩 — 백유리</text>
+    <text x="110" y="190" font-size="27">9/14 (일)  한기현 님 — 불면 호소.</text>
+    <text x="140" y="240" font-size="27">노르미날 10mg  30정 처방</text>
+    <text x="140" y="290" font-size="27">(1일 1정, 취침 전)  동해 중앙약국 조제</text>
+    <text x="140" y="340" font-size="23" fill="#7a2f2f">※ 다량 복용 시 호흡 억제 위험 — 주의 설명함</text>
+    <text x="110" y="440" font-size="27">9/17 (수)  21:40  한기욱 회장님</text>
+    <text x="140" y="490" font-size="27">혈압 150 / 95.  맥박 정상.</text>
+    <text x="140" y="540" font-size="27">브랜디 한 잔 드시는 중 — 과음 자제 권고.</text>
+    <text x="140" y="590" font-size="27">수면제 권유 → 또 거절하심. (늘 그렇듯)</text>
+    <text x="140" y="640" font-size="27">21:50 서재 나옴.</text>
+    <text x="110" y="740" font-size="27">22:00 ~ 응접실. 서진 양 피아노.</text>
+    <text x="140" y="790" font-size="27">(쇼팽 녹턴 — 몇 번이고 같은 소절)</text>
+  </g>
+  <path d="M130 548 q150 12 330 -4" stroke="#b33" stroke-width="3" fill="none" opacity="0.6"/>
+</svg>

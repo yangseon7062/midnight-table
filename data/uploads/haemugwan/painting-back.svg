@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 620" width="800" height="620">
+  <defs>
+    <pattern id="canvas" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#d9c9a5"/><path d="M0 3H6M3 0V6" stroke="#c4b288" stroke-width="1"/></pattern>
+    <linearGradient id="wood" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8b6038"/><stop offset="1" stop-color="#5e3f22"/></linearGradient>
+  </defs>
+  <rect width="800" height="620" fill="#1d1a17"/>
+  <rect x="80" y="50" width="640" height="480" fill="url(#canvas)"/>
+  <rect x="80" y="50" width="640" height="480" fill="none" stroke="url(#wood)" stroke-width="34"/>
+  <path d="M400 50 V530 M80 290 H720" stroke="url(#wood)" stroke-width="22" opacity="0.9"/>
+  <g font-family="'Nanum Pen Script', Gungsuh, Batang, serif" fill="#3a2a1a">
+    <text x="110" y="120" font-size="28">「해무(海霧)」</text><text x="110" y="160" font-size="22">윤해석 화백 · 1962</text>
+    <text x="110" y="200" font-size="20">해무관 소장품 No. 7</text>
+  </g>
+  <g transform="translate(470 360)">
+    <rect x="0" y="0" width="200" height="120" fill="#f6f1e1" stroke="#7a6a50"/>
+    <text x="100" y="38" font-family="Batang, serif" font-size="18" fill="#444" text-anchor="middle">복원 · 보존 처리</text>
+    <text x="100" y="72" font-family="Batang, serif" font-size="26" fill="#1f2a55" text-anchor="middle" font-style="italic">S.J.  84.11</text>
+    <text x="100" y="104" font-family="Batang, serif" font-size="14" fill="#777" text-anchor="middle">한서진 복원 공방</text>
+  </g>
+  <g stroke="#b3261e" stroke-width="3" fill="none"><circle cx="570" cy="420" r="92" stroke-dasharray="8 6"/></g>
+  <text x="110" y="330" font-family="Batang, serif" font-size="17" fill="#3a2a1a">※ 캔버스 천이 25년 된 것치고</text><text x="110" y="356" font-family="Batang, serif" font-size="17" fill="#3a2a1a">   지나치게 새것이다.</text>
+  <text x="30" y="590" font-family="Batang, serif" font-size="18" fill="#d8cbb5">한서진의 방 옷장 안 — 천으로 감싸 둔 그림의 뒷면</text>
+</svg>
