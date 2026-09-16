@@ -122,7 +122,7 @@ function buildSalon(): MapDef {
     cols, rows, tiles: t, objects,
     tables: [{ id: 'main', name: '중앙 테이블', rect: { x: cx, y: cy, w: tw, h: th }, seats }],
     lights: [
-      { x: cx + tw / 2, y: cy + th / 2, r: 150, color: '255,214,150', flicker: 0.04, intensity: 1 },
+      { x: cx + tw / 2, y: cy + th / 2, r: 190, color: '255,214,150', flicker: 0.04, intensity: 1 },
       { x: 22 * T, y: 3 * T, r: 90, color: '255,140,60', flicker: 0.18, intensity: 0.95 },
       { x: 6 * T, y: 7 * T, r: 90, color: '255,200,130', flicker: 0.05, intensity: 0.85 },
       { x: 1.5 * T, y: 10.5 * T, r: 60, color: '255,190,120', flicker: 0.06 },
