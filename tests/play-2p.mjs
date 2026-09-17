@@ -129,6 +129,8 @@ if (corner) {
   await sleep(600);
   await S(A.page, '19-dossier-common');
 }
+const chatOnTop = await A.page.evaluate(() => { const r = document.querySelector('.chat').getBoundingClientRect(); return String(document.elementFromPoint(r.left + r.width / 2, r.bottom - 20)?.tagName); });
+check(chatOnTop === 'INPUT', `문서를 펼친 상태에서도 채팅 입력창이 눌림 (${chatOnTop})`);
 await A.page.keyboard.press('Escape');
 await sleep(300);
 await closeSpread(A);

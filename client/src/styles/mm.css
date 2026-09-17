@@ -348,11 +348,14 @@
   .mailbox { top: auto; bottom: 90px; right: 12px; }
 }
 
-/* ── 오버레이를 열어도 대화·타이머·마이크는 계속 보이게 (넓은 화면) ── */
-.chat, .controls { z-index: 58; }
+/* ── 오버레이를 열어도 대화·타이머·마이크는 계속 보이게 (넓은 화면) ──
+   (번들 순서와 무관하게 이기도록 .room-screen 을 붙여 특이도를 높인다) */
+.room-screen .chat, .room-screen .controls { z-index: 58; }
 .room-screen.playing .phase-bar { z-index: 57; }
 @media (min-width: 1200px) {
   .env-back, .dossier-back, .viewer-back, .vote-back { padding: 150px 16px 84px 404px; }
+  /* 배역을 고르는 동안에도 채팅·마이크를 쓸 수 있게 자리를 비워 둔다 */
+  .mm-casting { padding-left: 404px; padding-right: 96px; }
   .ending-back { padding-left: 404px; }
   .book { width: min(1060px, 100%); height: min(820px, calc(100vh - 250px)); }
   .cork, .viewer, .vote-board, .spread { width: min(1100px, 100%); max-height: calc(100vh - 250px); }
