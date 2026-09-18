@@ -34,7 +34,7 @@ const pos = (snap, uid) => { const m = snap.members.find((mm) => mm.userId === u
 
 const A = await client('에이');
 const B = await client('비');
-const r = await call(A.s, 'rooms:create', { title: '재접속 실험' });
+const r = await call(A.s, 'rooms:create', { title: '재접속 실험', maxMembers: 3 });
 const roomId = r.roomId;
 const ja = await call(A.s, 'room:join', { roomId });
 const jb = await call(B.s, 'room:join', { roomId });
@@ -87,12 +87,22 @@ check(A.state.participants.find((p) => p.userId === B.user.userId).absent, '유�
 await sleep(2200);
 check(A.state.step.index >= 1, `부재자는 자동 확인 처리되어 진행 계속 (현재 ${A.state.step.index + 1}단계)`);
 
+// 부재자의 자리는 비워 두지 않는다 — 돌아올 자리를 남에게 내주면 정원을 넘게 된다 (정원 3명 방)
+const D = await client('난입씨');
+const jd = await call(D.s, 'room:join', { roomId });
+check(!jd.ok, `부재자 자리를 다른 사람이 차지하지 못함 (${jd.error ?? '입장됨'})`);
+const lounge = await call(D.s, 'rooms:list');
+const rs = lounge.rooms.find((x) => x.id === roomId);
+check(rs.members === 3, `라운지 목록에도 가득 찬 것으로 보임 (${rs.members}/${rs.maxMembers})`);
+D.s.disconnect();
+
 // B 복귀 (같은 토큰)
 const B2 = await client(null, bToken);
 check(B2.user.userId === B.user.userId && B2.lastRoomId === roomId, '같은 토큰으로 재접속 → 같은 유저, 마지막 방 기억');
 const jb2 = await call(B2.s, 'room:join', { roomId });
 await sleep(300);
 check(jb2.ok && B2.state?.me.charId === 'taeo', '방 복귀 → 원래 캐릭터(강태오) 복원');
+check(jb2.snapshot.members.length === 3, `복귀 후에도 정원을 넘지 않음 (${jb2.snapshot.members.length}/3명)`);
 check(B2.state.items.filter((i) => i.stepIndex === 0).every((i) => i.opened), '열람했던 자료의 열람 상태 복원');
 check(B2.state.cards.map((c) => `${c.id}:${c.usesLeft}`).join(',') === bCardsBefore, `카드 사용 횟수 복원 (${bCardsBefore})`);
 const bPos = jb2.snapshot.members.find((m) => m.userId === B.user.userId);

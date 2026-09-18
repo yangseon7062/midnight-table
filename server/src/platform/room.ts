@@ -86,11 +86,19 @@ export class Room {
   // ── 조회 ───────────────────────────────────────────
   activeMembers() { return [...this.members.values()].filter((m) => !m.absent || m.connected); }
 
+  /**
+   * 방의 한 자리를 차지하고 있는가.
+   * 진행 중인 게임의 참가자는 부재 상태여도 자리를 유지한다 — 언제든 돌아와 이어서
+   * 플레이할 수 있으므로, 그 사이 자리를 내주면 돌아왔을 때 정원을 넘게 된다.
+   */
+  private holdsSeat(m: Member) { return m.connected || !m.absent || !!this.game?.participants.includes(m.userId); }
+  seatCount() { return [...this.members.values()].filter((m) => this.holdsSeat(m)).length; }
+
   summary(): RoomSummary {
     const mod = this.table.moduleId ? this.deps.modules.get(this.table.moduleId) : null;
     return {
       id: this.id, no: this.no, title: this.title, hasPassword: !!this.passwordHash,
-      members: [...this.members.values()].filter((m) => m.connected || (m.disconnectedAt && !m.absent)).length,
+      members: this.seatCount(),
       maxMembers: this.maxMembers, status: this.status, moduleName: mod?.name ?? null,
       contentTitle: this.table.contentTitle, createdAt: this.createdAt,
     };
@@ -129,8 +137,7 @@ export class Room {
     const existing = this.members.get(userId);
     if (existing) return null; // 재접속은 비밀번호/정원 검사 없이 복귀
     if (this.passwordHash && this.passwordHash !== passwordHash) return passwordHash ? '비밀번호가 올바르지 않습니다' : 'PASSWORD_REQUIRED';
-    const count = [...this.members.values()].filter((m) => m.connected || !m.absent).length;
-    if (count >= this.maxMembers) return '방이 가득 찼습니다';
+    if (this.seatCount() >= this.maxMembers) return '방이 가득 찼습니다';
     return null;
   }
 
