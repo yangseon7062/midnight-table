@@ -128,6 +128,9 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 
 .zone-toast { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 22px; border-radius: 12px; background: rgba(14,10,8,0.88); border: 1px solid var(--line-strong); box-shadow: var(--shadow); animation: zonein 2.6s ease forwards; pointer-events: none; text-align: center; }
 .zone-toast.in b { color: var(--gold-hi); font-size: 16px; }
+/* 구역 안이지만 격리가 꺼져 있을 때 — 들어온 건 맞지만 대화는 새어 나간다 */
+.zone-toast.muted { border-color: var(--warn); }
+.zone-toast.muted b { color: var(--warn); font-size: 16px; }
 @keyframes zonein { 0% { opacity: 0; transform: translate(-50%, -10px); } 12%, 80% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
 .room-screen.playing .zone-toast { top: 170px; }
 

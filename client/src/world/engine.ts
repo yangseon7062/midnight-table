@@ -31,6 +31,7 @@ export class WorldEngine {
   private lastT = performance.now();
   private stepAcc = 0;
   private myZone: string | null = null;
+  private myArea: string | null = null;   // 격리 여부와 무관하게 '지금 서 있는 구역'
   private flash = 0;
   private nextLightning = performance.now() + 15000 + Math.random() * 20000;
   private dust = Array.from({ length: 50 }, () => ({ x: Math.random() * 704, y: Math.random() * 512, vx: (Math.random() - 0.5) * 3, vy: -1 - Math.random() * 3, p: Math.random() }));
@@ -126,6 +127,8 @@ export class WorldEngine {
     const ox = this.cam.x - this.low.width / 2, oy = this.cam.y - this.low.height / 2;
     return { x: rect.left + ((x - ox) * this.scale) / dpr, y: rect.top + ((y - oy) * this.scale) / dpr };
   }
+  /** 구역 목록 (테스트/툴용) */
+  zoneList(): ZoneView[] { return zones.value; }
   seats() { return this.map.tables.flatMap((t) => t.seats.map((s, index) => ({ tableId: t.id, index, ...s }))); }
   private viewX() { return Math.round(this.cam.x - this.low.width / 2); }
   private viewY() { return Math.round(this.cam.y - this.low.height / 2); }
@@ -245,13 +248,22 @@ export class WorldEngine {
         socket.emit('m', { x: Math.round(mine.x * 100) / 100, y: Math.round(mine.y * 100) / 100, f, mv });
       }
       // 구역 진입/이탈
-      const z = zoneAt(zones.value, mine.x, mine.y);
-      const zid = z && (z as ZoneView).open ? z.id : null;
+      // 구역에는 언제든 걸어 들어갈 수 있다. 다만 격리(밀담)는 단계에 따라 켜지고 꺼지므로,
+      // 격리가 꺼진 구역에 들어섰을 때도 '여기서 한 말은 모두에게 들린다'고 알려 준다.
+      const z = zoneAt(zones.value, mine.x, mine.y) as ZoneView | null;
+      const zid = z && z.open ? z.id : null;
       if (zid !== this.myZone) {
         this.myZone = zid;
         setMuffled(!!zid);
         sfx.door();
-        bus.emit('zone:self', zid ? z : null);
+        if (zid) bus.emit('zone:self', z);
+        else if (z) bus.emit('zone:muted', z);   // 구역 안이지만 격리가 꺼진 상태
+        else bus.emit('zone:self', null);
+      }
+      const areaId = z?.id ?? null;
+      if (areaId !== this.myArea) {
+        this.myArea = areaId;
+        if (z && !z.open) bus.emit('zone:muted', z);
       }
       // 근처 좌석
       let near: WorldEngine['nearSeat'] = null;

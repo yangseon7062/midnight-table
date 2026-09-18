@@ -155,6 +155,35 @@ const bSaw = await B.page.evaluate(() => [...document.querySelectorAll('.chat-li
 check(bSaw, '공용 채팅 전달');
 await S(B.page, '21-chat-bubble');
 
+log('밀담이 닫힌 단계에서 구역에 들어가기');
+const zoneState = await A.page.evaluate(() => {
+  const z = window.__engine.zoneList().find((x) => x.name.includes('서재'));
+  return z ? { name: z.name, open: z.open } : null;
+});
+check(zoneState && zoneState.open === false, `2단계에서는 밀담 구역이 닫혀 있음 (${zoneState?.name} open=${zoneState?.open})`);
+let entered = false;
+for (let i = 0; i < 30 && !entered; i++) {
+  const p = await A.page.evaluate(() => {
+    const e = window.__engine;
+    const z = e.zoneList().find((x) => x.name.includes('서재'));
+    const me = e.self();
+    if (!z || !me) return null;
+    const tx = z.rect.x + z.rect.w / 2, ty = z.rect.y + z.rect.h / 2;
+    const dx = tx - me.x, dy = ty - me.y, d = Math.hypot(dx, dy);
+    const k = Math.min(56, d) / (d || 1);
+    return { ...e.worldToClient(me.x + dx * k, me.y + dy * k), d };
+  });
+  if (!p) break;
+  await A.page.mouse.click(p.x, p.y);
+  await sleep(500);
+  if (await A.page.$('.zone-toast.muted')) entered = true;
+  else if (p.d < 8) break;
+}
+check(entered, '밀담이 닫혀 있어도 구역에 들어갈 수 있고, 들리지 않는다는 안내가 뜸');
+if (entered) await S(A.page, '21b-zone-muted');
+// 다시 자리로
+await walkAndSit(A, 1);
+
 log('B 새로고침 → 복원');
 const bBefore = await B.page.evaluate(() => document.querySelector('.my-role b')?.textContent);
 await B.page.reload();
