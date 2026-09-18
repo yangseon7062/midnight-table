@@ -123,6 +123,45 @@ while (A.state.stage === 'flow') {
     check(A.events.some((e) => e.type === 'card'), '다른 참가자에게 카드 사용 이벤트');
     const bad = await call(A.s, 'g:action', { type: 'useCard', payload: { cardId: 'secretary-note' } });
     check(!bad.ok, '남의 카드 사용 거부');
+
+    // ── 테이블에 펼치기 (같은 대화 채널에 있는 사람에게만 보인다) ──
+    const secret = A.state.items.find((i) => i.kind === 'sheet' && i.opened);
+    const noConfirm = await call(A.s, 'g:action', { type: 'present', payload: { key: secret.key } });
+    check(!noConfirm.ok, `비공개 자료는 확인 없이 펼칠 수 없음 (${noConfirm.error})`);
+
+    const pub = A.state.items.find((i) => i.opened && (i.kind === 'common' || i.clue?.scope === 'public'));
+    const pres = await call(A.s, 'g:action', { type: 'present', payload: { key: pub.key } });
+    check(pres.ok, '공개 자료를 테이블에 펼침');
+    await sleep(150);
+    check(A.state.presentation?.mine === true, '펼친 본인 화면에 표시');
+    check(B.state.presentation?.key === pub.key, '같은 공간의 다른 참가자에게도 같은 자료가 보임');
+    check(!C.state.presentation, '관전자에게는 보이지 않음');
+    check(B.chats.some((m) => m.text.includes('테이블에 펼쳤습니다')), '펼쳤다는 알림이 채팅에 남음');
+
+    const notOwner = await call(B.s, 'g:action', { type: 'unpresent' });
+    check(!notOwner.ok, '펼친 사람만 걷을 수 있음');
+
+    // 밀담 구역으로 들어가면 구역 밖에서는 보이지 않아야 한다
+    A.s.emit('stand');
+    await walkTo(A, seat0.x, seat0.y, 440, seat0.y);
+    await walkTo(A, 440, seat0.y, 440, 392);
+    await walkTo(A, 440, 392, 504, 392);
+    await sleep(250);
+    check(!B.state.presentation, '펼친 사람이 밀담 구역에 들어가면 구역 밖에는 보이지 않음');
+    check(A.state.presentation?.key === pub.key, '구역 안의 본인에게는 계속 보임');
+    await walkTo(A, 504, 392, 440, 392);
+    await walkTo(A, 440, 392, 440, seat0.y);
+    await sleep(250);
+    check(B.state.presentation?.key === pub.key, '구역에서 나오면 다시 함께 보임');
+
+    const secretOk = await call(A.s, 'g:action', { type: 'present', payload: { key: secret.key, confirm: true } });
+    check(secretOk.ok, '확인하면 비공개 자료도 공개할 수 있음');
+    await sleep(150);
+    check(B.state.presentation?.wasPrivate === true && B.state.presentation.item.sheet, '공개된 비공개 자료의 본문이 상대에게 전달됨');
+
+    await call(A.s, 'g:action', { type: 'unpresent' });
+    await sleep(150);
+    check(!A.state.presentation && !B.state.presentation, '걷으면 모두의 화면에서 사라짐');
   }
   if (st.kind === 'vote') {
     r = await call(A.s, 'g:action', { type: 'vote', payload: { candidateId: 'kihyun' } });

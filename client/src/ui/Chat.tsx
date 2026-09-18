@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { LIMITS, type ChatMessage } from '@shared/platform';
-import { bus, call, chat, me, toast, zones, members } from '../net/net';
+import { bus, call, chat, me, storage, toast, zones, members } from '../net/net';
 import { voiceChannel } from '../audio/voice';
 import { sfx } from '../audio/sfx';
 
 /** 텍스트 채팅. 채널(공용 공간 / 밀담 구역)은 서버가 내 위치로 결정한다. */
+type ChatFilter = 'all' | 'talk' | 'system';
+const FILTERS: [ChatFilter, string][] = [['all', '전체'], ['talk', '대화'], ['system', '시스템']];
+
 export function ChatPanel() {
   const [text, setText] = useState('');
   const [collapsed, setCollapsed] = useState(false);
+  const [filter, setFilter] = useState<ChatFilter>(() => storage.getPref<ChatFilter>('chatFilter', 'all'));
   const [unread, setUnread] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +38,12 @@ export function ChatPanel() {
   useEffect(() => {
     const el = listRef.current;
     if (el && stick.current) el.scrollTop = el.scrollHeight;
-  }, [chat.value, collapsed]);
+  }, [chat.value, collapsed, filter]);
+
+  // 시스템 메시지는 진행 기록(🕰)에도 남으므로, 걸러내도 정보가 사라지지 않는다.
+  const visible = chat.value.filter((m) => filter === 'all' || (filter === 'talk' ? m.kind === 'chat' : m.kind !== 'chat'));
+  const hidden = chat.value.length - visible.length;
+  const pick = (f: ChatFilter) => { setFilter(f); storage.setPref('chatFilter', f); stick.current = true; };
 
   const send = async (e: Event) => {
     e.preventDefault();
@@ -54,8 +63,17 @@ export function ChatPanel() {
         <span class="faint">{collapsed ? (unread ? <b class="unread">{unread}</b> : '▲') : '▼'}</span>
       </button>
       {!collapsed && (
+        <div class="chat-filter">
+          {FILTERS.map(([f, label]) => (
+            <button key={f} type="button" class={`cf ${filter === f ? 'on' : ''}`} onClick={() => pick(f)}>{label}</button>
+          ))}
+          {hidden > 0 && <span class="tiny faint">{hidden}개 숨김</span>}
+        </div>
+      )}
+      {!collapsed && (
         <div class="chat-list" ref={listRef} onScroll={(e) => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 30; }}>
-          {chat.value.map((m) => <ChatLine key={m.id} m={m} />)}
+          {visible.map((m) => <ChatLine key={m.id} m={m} />)}
+          {visible.length === 0 && <div class="chat-line sys faint">{filter === 'talk' ? '아직 오간 대화가 없습니다' : '표시할 시스템 메시지가 없습니다'}</div>}
         </div>
       )}
       <form class="chat-input" onSubmit={send}>

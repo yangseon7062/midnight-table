@@ -8,32 +8,6 @@ export interface Bundle { stepIndex: number; title: string; items: MMItemView[] 
 const KIND_ICON = { sheet: '📜', common: '📖', clue: '🔎' } as const;
 const KIND_LABEL = { sheet: '설정집', common: '공용집', clue: '단서' } as const;
 
-/** 우편함: 아직 다 열어보지 않은 봉투 더미 */
-export function Mailbox(props: { bundles: Bundle[]; onOpen: (b: Bundle) => void }) {
-  const pending = props.bundles.filter((b) => b.items.some((i) => !i.opened));
-  const prev = useRef(pending.length);
-  const [bump, setBump] = useState(0);
-  useEffect(() => {
-    if (pending.length > prev.current) { setBump((b) => b + 1); sfx.cardSlide(); }
-    prev.current = pending.length;
-  }, [pending.length]);
-  if (!pending.length) return null;
-  const top = pending[pending.length - 1];
-  return (
-    <button class="mailbox" key={bump} onClick={() => { props.onOpen(top); sfx.paper(); }} title="봉투 열기">
-      {pending.slice(-3).map((b, i, arr) => (
-        <div key={b.stepIndex} class="env-mini" style={{ '--k': arr.length - 1 - i } as any}>
-          <div class="seal-mini" />
-        </div>
-      ))}
-      <div class="mailbox-label pixel">
-        <b>새 봉투 {pending.length}</b>
-        <span class="tiny">「{top.title}」 · 클릭해서 열기</span>
-      </div>
-    </button>
-  );
-}
-
 /** 봉투 개봉 → 내용물이 테이블에 펼쳐지고, 하나씩 뒤집어 확인한다 */
 export function EnvelopeOpener(props: { bundle: Bundle; scenarioInitial: string; onClose: () => void; onRead: (item: MMItemView) => void }) {
   const v = view();
@@ -81,8 +55,15 @@ export function EnvelopeOpener(props: { bundle: Bundle; scenarioInitial: string;
 
   const unopened = items.filter((i) => !i.opened).length;
 
+  // 봉투는 도착한 순간에만 존재한다. 언제든 치울 수 있고, 자료는 사건 파일·단서 보드에 그대로 남는다.
+  useEffect(() => {
+    const onEsc = (ev: KeyboardEvent) => { if (ev.key === 'Escape') props.onClose(); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [props.onClose]);
+
   return (
-    <div class="env-back" onPointerDown={(e) => { if (e.target === e.currentTarget && opened) props.onClose(); }}>
+    <div class="env-back" onPointerDown={(e) => { if (e.target === e.currentTarget) props.onClose(); }}>
       {!opened && (
         <div class="env-stage">
           <div class="env-caption pixel">「{props.bundle.title}」</div>
@@ -101,7 +82,7 @@ export function EnvelopeOpener(props: { bundle: Bundle; scenarioInitial: string;
             <span class="arrow">⬆</span> 봉인을 잡고 위로 끌어올려 봉투를 뜯으세요
             <span class="faint tiny">({items.length}개의 자료가 들어 있습니다)</span>
           </div>
-          <button class="btn ghost sm" onClick={props.onClose}>나중에 열기</button>
+          <button class="btn ghost sm" onClick={props.onClose}>나중에 열기 (ESC)</button>
         </div>
       )}
       {opened && (

@@ -71,7 +71,6 @@ export const ZoneSchema = z.object({
   id,
   name: z.string().min(1).max(20),
   rect: z.object({ x: z.number(), y: z.number(), w: z.number().min(16), h: z.number().min(16) }),
-  maxOccupants: z.number().int().min(1).max(12).nullable().default(null),
 });
 
 export const RevealItemSchema = z.object({
@@ -246,7 +245,6 @@ export function validateScenario(input: unknown): { scenario: Scenario | null; i
   e.culpritIds.forEach((c) => { if (!personIds.has(c)) err('ending.culpritIds', `진범 '${c}' 가 캐릭터/NPC 목록에 없습니다`); });
   if (voteSteps.length > 0 && e.culpritIds.length === 0) warn('ending.culpritIds', '진범이 지정되지 않았습니다');
   e.characterEndings.forEach((ce, i) => { if (!charIds.has(ce.charId)) err(`ending.characterEndings.${i}`, `캐릭터 '${ce.charId}' 가 없습니다`); });
-  s.zones.forEach((z, i) => { if (z.maxOccupants === 1) warn(`zones.${i}.maxOccupants`, `'${z.name}': 최대 1명이면 대화 상대가 없습니다`); });
 
   return { scenario: s, issues };
 }

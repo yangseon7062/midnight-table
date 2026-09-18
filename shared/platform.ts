@@ -22,8 +22,6 @@ export interface ZoneDef {
   id: string;
   name: string;
   rect: Rect;
-  /** null/undefined = 제한 없음 */
-  maxOccupants?: number | null;
 }
 
 export interface ZoneView extends ZoneDef {

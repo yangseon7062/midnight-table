@@ -436,7 +436,7 @@ export class WorldEngine {
 
     for (const z of zones.value) {
       const cx = (z.rect.x + z.rect.w / 2 - ox) * S, top = (z.rect.y - oy) * S + 8 * dpr;
-      const label = `${z.open ? '🔒' : '·'} ${z.name}${z.maxOccupants ? ` (${z.occupants.length}/${z.maxOccupants})` : z.occupants.length ? ` · ${z.occupants.length}명` : ''}`;
+      const label = `${z.open ? '🔒' : '·'} ${z.name}${z.occupants.length ? ` · ${z.occupants.length}명` : ''}`;
       g.font = font(11);
       const w = g.measureText(label).width + 14 * dpr;
       g.fillStyle = z.open ? 'rgba(20,14,10,0.72)' : 'rgba(20,20,24,0.5)';

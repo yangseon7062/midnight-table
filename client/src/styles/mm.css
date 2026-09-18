@@ -89,18 +89,9 @@
 .my-role { text-align: center; padding: 6px; border-radius: 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--line); display: flex; flex-direction: column; }
 .my-role b { color: var(--gold-hi); font-size: 14px; }
 
-/* ── 우편함 & 봉투 ── */
-.mailbox { position: absolute; right: 100px; top: 12px; z-index: 22; width: 150px; height: 118px; background: none; border: none; cursor: pointer; animation: mailbump 0.6s cubic-bezier(.2,1.6,.4,1); }
-@keyframes mailbump { 0% { transform: translateY(-80px) rotate(-15deg); opacity: 0; } }
-.env-mini { position: absolute; left: 50%; top: 10px; width: 110px; height: 70px; margin-left: -55px; border-radius: 3px; background: linear-gradient(#c9a877, #b08d5c); box-shadow: 0 6px 14px rgba(0,0,0,0.5); transform: translate(calc(var(--k) * 6px), calc(var(--k) * -5px)) rotate(calc(var(--k) * 4deg - 3deg)); }
-.env-mini::before { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, transparent 49%, rgba(0,0,0,0.12) 50%, transparent 51%), linear-gradient(20deg, transparent 49%, rgba(0,0,0,0.12) 50%, transparent 51%); }
-.seal-mini { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d64545, #7a1016); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.mailbox:hover .env-mini { transform: translate(calc(var(--k) * 6px), calc(var(--k) * -5px - 6px)) rotate(calc(var(--k) * 4deg - 5deg)); }
-.mailbox-label { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; padding: 4px 6px; border-radius: 8px; background: rgba(12,9,8,0.9); border: 1px solid var(--blood-hi); display: flex; flex-direction: column; animation: btnpulse 1.4s infinite; }
-.mailbox-label b { color: #ffcdc4; font-size: 12px; }
-.mailbox-label .tiny { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-dim); }
+/* ── 봉투 ── */
 
-.env-back, .dossier-back, .viewer-back, .vote-back, .ending-back { position: fixed; inset: 0; z-index: 55; background: rgba(5,4,6,0.78); display: grid; place-items: center; animation: fadein 0.25s; backdrop-filter: blur(2px); }
+.env-back, .dossier-back, .viewer-back, .vote-back, .ending-back, .present-back { position: fixed; inset: 0; z-index: 55; background: rgba(5,4,6,0.78); display: grid; place-items: center; animation: fadein 0.25s; backdrop-filter: blur(2px); }
 .env-stage { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .env-caption { color: var(--gold-hi); font-size: 16px; }
 .envelope { position: relative; width: 420px; height: 270px; perspective: 900px; animation: envin 0.6s cubic-bezier(.2,1.3,.4,1); }
@@ -345,7 +336,6 @@
   .phase-bar { width: calc(100vw - 120px); min-width: 0; left: 12px; transform: none; top: 56px; }
   @keyframes dropin { from { transform: translateY(-40px); opacity: 0; } }
   .people { top: 250px; }
-  .mailbox { top: auto; bottom: 90px; right: 12px; }
 }
 
 /* ── 오버레이를 열어도 대화·타이머·마이크는 계속 보이게 (넓은 화면) ──
@@ -353,12 +343,12 @@
 .room-screen .chat, .room-screen .controls { z-index: 58; }
 .room-screen.playing .phase-bar { z-index: 57; }
 @media (min-width: 1200px) {
-  .env-back, .dossier-back, .viewer-back, .vote-back { padding: 150px 16px 84px 404px; }
+  .env-back, .dossier-back, .viewer-back, .vote-back, .present-back { padding: 150px 16px 84px 404px; }
   /* 배역을 고르는 동안에도 채팅·마이크를 쓸 수 있게 자리를 비워 둔다 */
   .mm-casting { padding-left: 404px; padding-right: 96px; }
   .ending-back { padding-left: 404px; }
   .book { width: min(1060px, 100%); height: min(820px, calc(100vh - 250px)); }
-  .cork, .viewer, .vote-board, .spread { width: min(1100px, 100%); max-height: calc(100vh - 250px); }
+  .cork, .viewer, .vote-board, .spread, .present-sheet { width: min(1100px, 100%); max-height: calc(100vh - 250px); }
   .viewer-stage { height: min(52vh, 640px); }
   .log-panel { max-height: calc(100vh - 260px); }
 }
@@ -374,3 +364,33 @@
 .tip-ico { font-size: 28px; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; background: rgba(60,40,20,0.1); flex-shrink: 0; }
 .tip b { font-size: 16px; }
 .tip p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.65; color: #4a3b2c; }
+
+
+/* ── 테이블에 펼치기 (같은 자리에 있는 사람들에게 자료를 동시에 보여 준다) ── */
+.btn.present.secret { background: linear-gradient(#7a2b2c, #4d1618); border-color: #c4685f; }
+.btn.present.live { background: linear-gradient(#3f6b45, #24402a); border-color: #86c08f; color: #eafce9; }
+
+.present-back { z-index: 56; }
+.present-sheet { width: min(940px, 100%); max-height: calc(100vh - 160px); display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 12px; animation: presentin 0.34s cubic-bezier(.2,1.2,.35,1); }
+@keyframes presentin { 0% { opacity: 0; transform: translateY(26px) scale(0.97) rotate(-0.6deg); } 100% { opacity: 1; transform: none; } }
+.present-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.present-head h3 { margin: 4px 0 2px; font-size: 20px; color: var(--gold-hi); }
+.present-body { flex: 1; overflow: auto; padding: 18px 22px; border-radius: 8px; }
+.present-img { display: block; max-width: 100%; max-height: 56vh; margin: 0 auto; border-radius: 4px; box-shadow: 0 10px 28px rgba(0,0,0,0.55); }
+.present-body .viewer-caption { margin: 14px 0 0; text-align: center; }
+.present-body .rich.small { margin-top: 12px; }
+.present-foot { text-align: center; }
+
+/* 닫아 두었을 때 남는 띠 — 아직 누군가 펼쳐 놓았다는 사실은 계속 보인다 */
+.present-banner { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 56; display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 99px; background: rgba(28,20,14,0.95); border: 1px solid var(--line-strong); box-shadow: var(--shadow); cursor: pointer; color: var(--text); }
+.present-banner:hover { border-color: var(--gold-hi); }
+.present-banner .ico { font-size: 15px; }
+.present-banner .open { color: var(--gold-hi); }
+
+/* 되돌릴 수 없는 공개를 묻는 확인창 */
+.confirm-back { position: fixed; inset: 0; z-index: 70; background: rgba(4,3,5,0.7); display: grid; place-items: center; animation: fadein 0.18s; backdrop-filter: blur(2px); }
+.confirm-card { width: min(460px, calc(100vw - 32px)); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.confirm-card h3 { margin: 0; color: var(--gold-hi); font-size: 19px; }
+.confirm-card p { margin: 0; line-height: 1.65; }
+.confirm-card .danger { color: var(--blood-hi); }

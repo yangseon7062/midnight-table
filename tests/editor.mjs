@@ -79,7 +79,8 @@ await sleep(300);
 const zoneCount = await p.$$eval('.zone-rect', (e) => e.length);
 check(zoneCount === 5, `드래그로 새 구역 생성 (${zoneCount}개)`);
 await p.locator('.zone-side .ed-field:has-text("구역 이름") input').fill('고해실');
-await p.click('.zone-side .ed-check:has-text("인원 제한")');
+// 밀담 구역에는 인원 제한이 없다 — 관련 입력란이 남아 있지 않은지 확인한다
+check(!(await p.$('.zone-side .ed-check:has-text("인원 제한")')), '구역 인원 제한 입력란이 없음');
 await p.screenshot({ path: `${shots}/53-editor-newzone.png` });
 const head = await p.textContent('.ed-issues .head');
 check(head.includes('플레이 가능'), `수정 후 검증 통과: ${head}`);

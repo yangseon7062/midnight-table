@@ -113,8 +113,8 @@ function buildSalon(): MapDef {
     { x: cx - 12, y: cy + th / 2 + 8, facing: 'right' },
   ];
 
-  const zone = (id: string, name: string, tx: number, ty: number, tw2: number, th2: number, max: number | null = null): ZoneDef =>
-    ({ id, name, rect: { x: tx * T, y: ty * T, w: tw2 * T, h: th2 * T }, maxOccupants: max });
+  const zone = (id: string, name: string, tx: number, ty: number, tw2: number, th2: number): ZoneDef =>
+    ({ id, name, rect: { x: tx * T, y: ty * T, w: tw2 * T, h: th2 * T } });
 
   return {
     id: 'salon',

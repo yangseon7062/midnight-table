@@ -1,12 +1,14 @@
 import type { GameHost, GameSession } from '../../platform/gameModule';
 import { GameError } from '../../platform/gameModule';
 import type { Scenario, Step, Character } from '../../../../shared/mm/scenario';
-import type { MMView, MMItemView, MMLogEntry, MMStage, MMEndingView, MMPersonPublic } from '../../../../shared/mm/view';
+import type { MMView, MMItemView, MMLogEntry, MMStage, MMEndingView, MMPersonPublic, MMPresentationView } from '../../../../shared/mm/view';
 import { EXTEND_COOLDOWN_MS, MM_MODULE_ID } from '../../../../shared/mm/view';
 import { clampStr } from '../../platform/util';
 
 interface Received { key: string; kind: 'sheet' | 'common' | 'clue'; refId: string; stepIndex: number; at: number; opened: boolean }
 interface VoteRecord { choice: string | null; confirmed: boolean }
+/** 테이블에 펼쳐 둔 자료 (한 방에 하나) */
+interface Presentation { key: string; kind: 'sheet' | 'common' | 'clue'; refId: string; by: string; charId: string | null; at: number; wasPrivate: boolean }
 
 export interface MMState {
   version: 1;
@@ -29,6 +31,7 @@ export interface MMState {
   log: MMLogEntry[];
   ending: MMEndingView | null;
   endingAt: number | null;
+  presentation?: Presentation | null;
 }
 
 const CAST_COUNTDOWN_MS = 3500;
@@ -44,12 +47,13 @@ export class MurderMysterySession implements GameSession {
       const sh = (v: number | null) => (v == null ? v : v + init.shift);
       s.castStartsAt = sh(s.castStartsAt); s.stepStartedAt = sh(s.stepStartedAt)!; s.stepEndsAt = sh(s.stepEndsAt);
       s.advanceAt = sh(s.advanceAt); s.extendCooldownUntil = sh(s.extendCooldownUntil)!; s.endingAt = sh(s.endingAt);
+      if (s.presentation) s.presentation.at = sh(s.presentation.at)!;
       this.st = s;
     } else {
       this.st = {
         version: 1, scenario: structuredClone(init.scenario), participants: [...init.participants], stage: 'casting',
         picks: {}, castReady: [], castStartsAt: null, stepIndex: -1, stepStartedAt: 0, stepEndsAt: null, advanceAt: null, ready: [],
-        received: {}, cards: {}, votes: {}, extendCooldownUntil: 0, extendLastBy: null, log: [], ending: null, endingAt: null,
+        received: {}, cards: {}, votes: {}, extendCooldownUntil: 0, extendLastBy: null, log: [], ending: null, endingAt: null, presentation: null,
       };
       this.host.setZones(this.sc.zones.length ? this.sc.zones : null);
       this.host.setZonesOpen(true);
@@ -85,6 +89,8 @@ export class MurderMysterySession implements GameSession {
       case 'ready': return this.setReady(uid, !!p.ready);
       case 'extend': return this.extend(uid);
       case 'useCard': return this.useCard(uid, String(p.cardId ?? ''), p.note);
+      case 'present': return this.present(uid, String(p.key ?? ''), !!p.confirm);
+      case 'unpresent': return this.unpresent(uid);
       case 'vote': return this.vote(uid, String(p.candidateId ?? ''));
       case 'voteConfirm': return this.voteConfirm(uid, !!p.confirmed);
       case 'leave': return this.leaveEnding(uid);
@@ -179,6 +185,7 @@ export class MurderMysterySession implements GameSession {
     this.st.stepEndsAt = step.durationSec > 0 ? now + step.durationSec * 1000 : null;
     this.st.advanceAt = null;
     this.st.ready = [];
+    this.st.presentation = null;
     this.host.setZonesOpen(step.zonesOpen);
     const receivedCount: Record<string, number> = {};
     if (step.type === 'reveal') {
@@ -284,6 +291,51 @@ export class MurderMysterySession implements GameSession {
     this.host.systemMessage(text);
     this.host.emit('all', 'card', { charId: c.id, charName: c.name, cardId: card.id, cardName: card.name, description: card.description, usesLeft: left - 1, uses: card.uses, note, by: this.info(uid)?.nickname });
     this.host.pushState();
+  }
+
+  // ── 테이블에 펼치기 ────────────────────────────────
+  // 말로만 설명하는 대신 자료를 모두의 화면에 동시에 띄운다.
+  // 보이는 범위는 대화와 같은 규칙을 따른다 — 밀담 구역 안이면 그 구역 사람에게만.
+  private present(uid: string, key: string, confirm: boolean) {
+    this.requireStage('flow');
+    const charId = this.charOf(uid);
+    const mine = (charId ? this.st.received[charId] ?? [] : []).find((r) => r.key === key);
+    if (!mine) throw new GameError('가지고 있지 않은 자료입니다');
+    if (!mine.opened) throw new GameError('아직 열어보지 않은 자료입니다');
+    const wasPrivate = this.isPrivate(mine.kind, mine.refId);
+    // 비공개 자료를 펼치는 것은 되돌릴 수 없는 선택이라 한 번 더 확인받는다
+    if (wasPrivate && !confirm) throw new GameError('비공개 자료입니다. 공개 확인이 필요합니다');
+    this.st.presentation = { key, kind: mine.kind, refId: mine.refId, by: uid, charId, at: this.now(), wasPrivate };
+    const name = charId ? this.personName(charId) : this.info(uid)?.nickname ?? '누군가';
+    const title = this.describe(mine.kind, mine.refId).title;
+    const text = `📂 ${name}이(가) 「${title}」을(를) 테이블에 펼쳤습니다${wasPrivate ? ' (비공개 자료 공개)' : ''}`;
+    const audience = this.host.audienceOf(this.host.channelOf(uid));
+    this.addLog('system', text, charId ?? undefined);
+    this.host.systemMessage(text, audience);
+    this.host.emit(audience, 'present', { byName: name, title, wasPrivate });
+    this.host.pushState();
+  }
+
+  private unpresent(uid: string) {
+    const pr = this.st.presentation;
+    if (!pr) return;
+    if (pr.by !== uid) throw new GameError('펼친 사람만 걷을 수 있습니다');
+    this.st.presentation = null;
+    this.host.pushState();
+  }
+
+  private isPrivate(kind: 'sheet' | 'common' | 'clue', refId: string) {
+    if (kind === 'sheet') return true;               // 설정집은 본래 나만 보는 자료다
+    if (kind === 'common') return false;             // 공용집은 모두가 이미 가진 자료다
+    return this.sc.clues.find((c) => c.id === refId)?.scope === 'private';
+  }
+
+  /** 자료 한 건의 표시 내용 (가진 사람이 아니어도 펼쳐진 것은 볼 수 있어야 하므로 시나리오에서 바로 만든다) */
+  private describe(kind: 'sheet' | 'common' | 'clue', refId: string): Pick<MMItemView, 'title' | 'sheet' | 'common' | 'clue'> {
+    if (kind === 'sheet') { const p = this.sc.sheetPages.find((x) => x.id === refId); return { title: p?.title ?? '설정집', sheet: { body: p?.body ?? '' } }; }
+    if (kind === 'common') { const c = this.sc.commonEntries.find((x) => x.id === refId); return { title: c?.title ?? '공용집', common: { blocks: c?.blocks ?? [] } }; }
+    const c = this.sc.clues.find((x) => x.id === refId);
+    return { title: c?.title ?? '단서', clue: { type: c?.type ?? 'text', text: c?.text ?? '', image: c?.image ?? null, caption: c?.caption ?? '', scope: c?.scope ?? 'public' } };
   }
 
   private currentVoteStep() {
@@ -435,6 +487,7 @@ export class MurderMysterySession implements GameSession {
   onParticipantConnection(_uid: string, _connected: boolean) { this.host.pushState(); }
   onParticipantAbsent(uid: string) {
     if (this.st.stage === 'casting') this.st.castReady = this.st.castReady.filter((x) => x !== uid);
+    if (this.st.presentation?.by === uid) this.st.presentation = null;
     this.host.pushState();
     if (this.st.stage === 'ending') this.checkEndingClose();
   }
@@ -470,6 +523,19 @@ export class MurderMysterySession implements GameSession {
     });
 
     const myCharDef = myChar ? this.character(myChar) : null;
+
+    // 펼쳐진 자료는 '같은 채널' 에 있는 참가자에게만 보인다 (대화 격리와 같은 규칙)
+    let presentation: MMPresentationView | null = null;
+    const pr = this.st.presentation;
+    if (pr && participant && this.host.channelOf(uid) === this.host.channelOf(pr.by)) {
+      const d = this.describe(pr.kind, pr.refId);
+      presentation = {
+        key: pr.key, byUserId: pr.by, byCharId: pr.charId, byName: pr.charId ? this.personName(pr.charId) : this.info(pr.by)?.nickname ?? '누군가',
+        at: pr.at, mine: pr.by === uid, wasPrivate: pr.wasPrivate,
+        item: { key: pr.key, kind: pr.kind, refId: pr.refId, stepIndex: this.st.stepIndex, at: pr.at, opened: true, ...d },
+      };
+    }
+
     let vote: MMView['vote'] = null;
     if (step?.type === 'phase' && step.kind === 'vote' && step.vote) {
       const recs = this.st.votes[step.id] ?? {};
@@ -511,6 +577,7 @@ export class MurderMysterySession implements GameSession {
       log: participant ? this.st.log.slice(-80) : this.st.log.filter((l) => l.kind !== 'vote').slice(-40),
       extend: { cooldownUntil: this.st.extendCooldownUntil, lastBy: this.st.extendLastBy ? this.displayName(this.st.extendLastBy) : null },
       vote,
+      presentation,
       ending: this.st.ending,
     };
   }

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { MMItemView, MMView } from '@shared/mm/view';
+import type { CommonBlock } from '@shared/mm/scenario';
 import { RichText, view } from './util';
+import { PresentButton } from './Present';
 import { sfx } from '../../audio/sfx';
 
 /** 사건 파일(책): 설정집 + 공용집. 페이지 모서리를 끌어 넘기거나 ←/→ 키로 넘긴다. */
@@ -78,6 +80,7 @@ export function Dossier(props: { initialKey?: string | null; onClose: () => void
             {commons.length === 0 && <div class="faint tiny">아직 없음</div>}
             {commons.map(({ p, i }) => <button key={p.key} class={`tab ${i === (turn?.to ?? idx) ? 'on' : ''}`} onClick={() => go(i > idx ? 1 : -1, i)}>{p.title}</button>)}
           </div>
+          {cur && <PresentButton item={cur} compact />}
           <button class="btn ghost sm" onClick={props.onClose}>덮기 (Esc)</button>
         </nav>
         <div class="book-page">
@@ -119,12 +122,22 @@ function PageContent({ item, v }: { item: MMItemView; v: MMView }) {
       </div>
     );
   }
-  const colorOf = (speaker: string) => v.people.find((p) => speaker.startsWith(p.name))?.color ?? '#6b5a48';
   return (
     <div class="page-inner common">
       <div class="page-stamp public">공용집 · 모두에게 공개</div>
       <h2 class="common-title">{item.title}</h2>
-      {item.common!.blocks.map((b, i) => {
+      <CommonBody blocks={item.common!.blocks} />
+    </div>
+  );
+}
+
+/** 공용집 본문 (서술 / 대사 / 소제목). 사건 파일과 '테이블에 펼치기' 가 같은 모양을 쓴다. */
+export function CommonBody({ blocks }: { blocks: CommonBlock[] }) {
+  const v = view();
+  const colorOf = (speaker: string) => v.people.find((p) => speaker.startsWith(p.name))?.color ?? '#6b5a48';
+  return (
+    <>
+      {blocks.map((b, i) => {
         if (b.type === 'heading') return <h3 key={i}>{b.text}</h3>;
         if (b.type === 'narration') return <p key={i} class="narration">{b.text}</p>;
         return (
@@ -134,6 +147,6 @@ function PageContent({ item, v }: { item: MMItemView; v: MMView }) {
           </div>
         );
       })}
-    </div>
+    </>
   );
 }

@@ -25,6 +25,10 @@ export interface GameHost {
   emit(target: string[] | 'all', type: string, payload?: unknown): void;
   /** 채팅 로그에 시스템 메시지 추가 (게임 내 알림) */
   systemMessage(text: string, audience?: string[] | 'all'): void;
+  /** 이 사람이 지금 속한 대화 채널 ('public' 또는 구역 id). 같은 채널끼리만 보고 듣는다. */
+  channelOf(userId: string): string;
+  /** 같은 채널에 있는 사람들의 userId */
+  audienceOf(channel: string): string[];
   toast(target: string[] | 'all', text: string, tone?: 'info' | 'warn' | 'error'): void;
   /** 격리 구역 목록 교체 (null = 맵 기본 구역) */
   setZones(zones: ZoneDef[] | null): void;

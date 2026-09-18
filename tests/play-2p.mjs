@@ -75,9 +75,12 @@ await dismissGuide(A); await dismissGuide(B);
 async function dismissGuide(pl) { const g = await pl.page.$('.guide button'); if (g) { await g.click(); await sleep(200); } }
 async function openEnvelope(pl, shotPrefix) {
   await dismissGuide(pl);
-  const btn = await pl.page.$('.mailbox');
-  if (!btn) return false;
-  await btn.click();
+  // 단계 전환으로 도착한 봉투는 저절로 펼쳐진다. 아직이면 진행 표시판의 봉투 버튼으로 연다.
+  if (!(await pl.page.$('.envelope, .spread'))) {
+    const btn = await pl.page.$('.phase-actions button.pulse');
+    if (!btn) return false;
+    await btn.click();
+  }
   await pl.page.waitForSelector('.envelope, .spread');
   if (await pl.page.$('.envelope')) {
     await sleep(900);
@@ -159,11 +162,14 @@ await B.page.waitForSelector('.phase-bar', { timeout: 15000 });
 await sleep(800);
 const bAfter = await B.page.evaluate(() => document.querySelector('.my-role b')?.textContent);
 check(bBefore === bAfter && bAfter === '강태오', `새로고침 후 같은 캐릭터 복귀 (${bAfter})`);
-const bMail = await B.page.$('.mailbox');
+const bMail = await B.page.$('.phase-actions button.pulse');
 check(!bMail, '열람 상태 복원 (열었던 봉투가 다시 봉인되지 않음)');
+check(!(await B.page.$('.mailbox')), '상시 우편함 패널이 화면에 없음');
 
 await readyUp(A); await readyUp(B);
 check(await waitStep(A, 3), '3단계 (현장 조사)');
+await sleep(600);
+check(!!(await A.page.$('.envelope, .spread')), '단계 전환으로 도착한 봉투가 저절로 펼쳐짐');
 await openEnvelope(A, '22');
 // 단서 뷰어
 const clueCard = await A.page.$('.spread-card.clue img');
@@ -179,6 +185,25 @@ if (clueCard) {
   await A.page.mouse.move(760, 420);
   await sleep(200);
   await S(A.page, '24-viewer-loupe');
+  // 테이블에 펼치기: 단서를 두 사람 화면에 동시에 띄운다
+  if (await A.page.$('.viewer .btn.present')) {
+    await A.page.click('.viewer .btn.present');
+    await sleep(700);
+    check(!!(await B.page.$('.present-back')), '펼친 자료가 상대 화면에도 뜸');
+    await S(B.page, '23b-present');
+    await B.page.keyboard.press('Escape');
+    await sleep(300);
+    check(!!(await B.page.$('.present-banner')), '상대가 닫아도 “같이 보기 중” 띠가 남음');
+    await B.page.click('.present-banner');
+    await sleep(300);
+    check(!!(await B.page.$('.present-back')), '띠를 눌러 다시 볼 수 있음');
+    await B.page.keyboard.press('Escape');
+    // 펼친 사람 화면에도 같은 자료가 떠 있다 — 거기서 바로 걷는다
+    check(!!(await A.page.$('.present-back')), '펼친 사람도 모두가 보는 화면을 그대로 본다');
+    await A.page.click('.present-sheet .btn.sm');
+    await sleep(500);
+    check(!(await B.page.$('.present-back, .present-banner')), '펼친 사람이 걷으면 상대 화면에서도 사라짐');
+  }
   await A.page.keyboard.press('Escape');
   await sleep(300);
   await A.page.keyboard.press('Escape').catch(() => {});

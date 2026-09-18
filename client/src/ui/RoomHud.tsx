@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { gameView, leaveRoom, me, members, membersVersion, roomMeta, serverNow, socket, zones } from '../net/net';
 import { micState, setMic, setVoiceVolume, voicePeers } from '../audio/voice';
 import { audioPrefs, setVolume, sfx } from '../audio/sfx';
@@ -77,6 +77,8 @@ export function ControlBar() {
   const [settings, setSettings] = useState(false);
   const [profile, setProfile] = useState(false);
   const [emotes, setEmotes] = useState(false);
+  const [lastEmote, setLastEmote] = useState<string | null>(null);
+  const emoteWrap = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = document.activeElement as HTMLElement | null;
@@ -88,6 +90,20 @@ export function ControlBar() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+  // 표현 목록은 골라도 닫히지 않는다 (연속으로 쓰기 위해). 바깥 클릭·ESC·표현 버튼으로만 닫는다.
+  useEffect(() => {
+    if (!emotes) return;
+    const onDown = (e: PointerEvent) => { if (!emoteWrap.current?.contains(e.target as Node)) setEmotes(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setEmotes(false); };
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onEsc);
+    return () => { document.removeEventListener('pointerdown', onDown); window.removeEventListener('keydown', onEsc); };
+  }, [emotes]);
+  useEffect(() => {
+    if (!lastEmote) return;
+    const t = setTimeout(() => setLastEmote(null), 420);
+    return () => clearTimeout(t);
+  }, [lastEmote]);
   const mic = micState.value;
   const mine = me.value ? members.get(me.value.userId) : null;
   return (
@@ -96,11 +112,21 @@ export function ControlBar() {
         <span class="ico">{mic === 'on' ? '🎙️' : '🔇'}</span>
         <span class="pixel tiny">{mic === 'on' ? '마이크 켜짐' : mic === 'none' ? '마이크 없음' : '마이크 꺼짐'}</span>
       </button>
-      <div class="ctl-wrap">
-        <button class="ctl" onClick={() => setEmotes(!emotes)} title="감정 표현 (Alt+1~8)"><span class="ico">😮</span><span class="pixel tiny">표현</span></button>
+      <div class="ctl-wrap" ref={emoteWrap}>
+        <button class={`ctl ${emotes ? 'on' : ''}`} onClick={() => setEmotes(!emotes)} title="감정 표현 (Alt+1~8)"><span class="ico">😮</span><span class="pixel tiny">표현</span></button>
         {emotes && (
           <div class="emote-pop panel">
-            {EMOTES.map((e, i) => <button key={e} onClick={() => { socket.emit('emote', { e }); setEmotes(false); sfx.click(); }} title={`Alt+${i + 1}`}>{e}</button>)}
+            <div class="emote-grid">
+              {EMOTES.map((e, i) => (
+                <button key={e} class={lastEmote === e ? 'sent' : ''}
+                  onClick={() => { socket.emit('emote', { e }); setLastEmote(e); sfx.click(); }}
+                  title={`Alt+${i + 1}`}>{e}</button>
+              ))}
+            </div>
+            <div class="emote-foot">
+              <span class="tiny faint pixel">계속 고를 수 있어요</span>
+              <button class="emote-close" onClick={() => setEmotes(false)} title="닫기 (ESC)">닫기</button>
+            </div>
           </div>
         )}
       </div>

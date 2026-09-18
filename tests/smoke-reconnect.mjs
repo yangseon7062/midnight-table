@@ -1,4 +1,4 @@
-// 재접속 유예/부재 처리, 게임 중 관전자, 구역 최대 인원 검증 (소켓 레벨)
+// 재접속 유예/부재 처리, 게임 중 관전자, 밀담 구역 입장 검증 (소켓 레벨)
 import { io } from 'socket.io-client';
 const URL = process.env.URL ?? 'http://localhost:3100';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -8,8 +8,9 @@ const check = (cond, msg) => { console.log(`${cond ? '  ✔' : '  ✘'} ${msg}`)
 
 async function client(name, token) {
   const s = io(URL, { transports: ['websocket'], forceNew: true });
-  const c = { s, name, state: null, chats: [], fixes: [], members: new Map() };
+  const c = { s, name, state: null, chats: [], fixes: [], members: new Map(), zones: [] };
   s.on('g:state', (v) => (c.state = v));
+  s.on('room:zones', (z) => (c.zones = z));
   s.on('chat:msg', (m) => c.chats.push(m));
   s.on('m:fix', (f) => c.fixes.push(f));
   s.on('room:member', (m) => c.members.set(m.userId, m));
@@ -99,19 +100,20 @@ check(Math.abs(bPos.x - 352) < 3 && Math.abs(bPos.y - 286) < 3, '위치 복원 (
 check(!A.state.participants.find((p) => p.userId === B.user.userId).absent, 'A 화면에서도 B 복귀 반영');
 check(jb2.history.length > 5 && jb2.history.some((m) => m.text.includes('배역')), '복귀 시 채팅 기록(자기에게 전달됐던 것) 복원');
 
-// 구역 최대 인원 (회랑 2인실) — 게임 단계에서 zonesOpen 여부와 무관하게 적용
+// 밀담 구역에는 인원 제한이 없다 — 들어가려는 행동을 막지 않는다
 const walkGallery = async (c, start) => { let p = await walk(c, start, { x: 440, y: start.y }); p = await walk(c, p, { x: 440, y: 392 }); return walk(c, p, { x: 504, y: 392 }); };
 const snap = jb2.snapshot;
 const pA = pos(snap, A.user.userId), pC = pos(snap, C.user.userId), pB = pos(snap, B.user.userId);
 A.s.emit('stand'); B2.s.emit('stand');
 await Promise.all([walkGallery(A, pA), walkGallery(B2, pB)]);
 await sleep(300);
-const zoneState = await new Promise((res) => { C.s.once('room:zones', res); C.s.emit('m', { x: pC.x, y: pC.y + 0.5, f: 0, mv: 0 }); setTimeout(() => res(null), 1500); });
 C.fixes.length = 0;
 await walkGallery(C, pC);
-await sleep(300);
-check(C.fixes.some((f) => f.reason?.includes('최대 2명')), `2인실에 세 번째 사람 입장 차단 (${C.fixes.map((f) => f.reason).filter(Boolean)[0] ?? '차단 없음'})`);
-void zoneState;
+await sleep(400);
+const blocked = C.fixes.map((f) => f.reason).filter(Boolean);
+check(blocked.length === 0, `세 번째 사람도 제한 없이 구역에 입장 (${blocked[0] ?? '차단 없음'})`);
+const gallery = C.zones.find((z) => z.name.includes('회랑'));
+check(gallery?.occupants?.length === 3, `구역 밖에서도 인원 수가 보임 (${gallery?.occupants?.length ?? '?'}명)`);
 
-console.log(failures ? `\n실패 ${failures}건` : '\n재접속/관전/정원 검사 모두 통과');
+console.log(failures ? `\n실패 ${failures}건` : '\n재접속/관전/구역 검사 모두 통과');
 process.exit(failures ? 1 : 0);

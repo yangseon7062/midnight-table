@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { MMItemView } from '@shared/mm/view';
 import { bus, toast, setActivity } from '../../net/net';
 import { sfx } from '../../audio/sfx';
 import { view } from './util';
 import { Casting } from './Casting';
 import { PhaseBar } from './PhaseBar';
-import { Mailbox, EnvelopeOpener, type Bundle } from './Envelope';
+import { EnvelopeOpener, type Bundle } from './Envelope';
 import { Dossier } from './Dossier';
 import { EvidenceBoard, EvidenceViewer } from './Evidence';
 import { CardHand, CardSpotlight } from './Cards';
 import { VoteBoard } from './Vote';
 import { Ending } from './Ending';
 import { Guide } from './Guide';
+import { Presentation } from './Present';
 import { storage } from '../../net/net';
 
 type Panel = { kind: 'none' } | { kind: 'envelope'; stepIndex: number } | { kind: 'dossier'; key?: string } | { kind: 'evidence' } | { kind: 'viewer'; key: string } | { kind: 'log' };
@@ -23,6 +24,8 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
   const [voteMin, setVoteMin] = useState(false);
   const [endingMin, setEndingMin] = useState(false);
   const [guide, setGuide] = useState(false);
+  const autoOpen = useRef<number | null>(null);   // 단계 전환으로 도착한 봉투 (전환 연출이 끝나면 자동 개봉)
+  const knownKeys = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (v.stage === 'flow' && v.me.participant && !storage.getPref('guideSeen', false)) setGuide(true);
   }, [v.stage]);
@@ -39,7 +42,11 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
 
   useEffect(() => {
     const offs = [
-      bus.on('g:step', (p) => { setTransition(p); sfx.bell(); setVoteMin(false); }),
+      bus.on('g:step', (p) => {
+        setTransition(p); sfx.bell(); setVoteMin(false);
+        // 단계 전환으로 자료가 왔을 때만 자동 개봉한다 (전환 밴드 → 봉투 → 자료로 한 흐름)
+        autoOpen.current = p.received > 0 ? p.index : null;
+      }),
       bus.on('g:extend', (p: { by: string; sec: number }) => { toast(`⏳ ${p.by}이(가) 시간을 연장했습니다`); }),
       bus.on('g:castStart', () => sfx.bell()),
       bus.on('g:ending', () => { setEndingMin(false); setPanel({ kind: 'none' }); }),
@@ -51,6 +58,25 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
     const t = setTimeout(() => setTransition(null), 2600);
     return () => clearTimeout(t);
   }, [transition]);
+  // 전환 연출(과 첫 진행 안내)이 끝나면 봉투를 펼친다.
+  // 이미 다른 창을 보고 있거나, 참가자가 아니거나, 열 것이 없으면 건너뛴다.
+  useEffect(() => {
+    if (transition || guide || autoOpen.current === null) return;
+    const idx = autoOpen.current;
+    if (!v.me.participant || !v.items.some((i) => i.stepIndex === idx && !i.opened)) { autoOpen.current = null; return; }
+    autoOpen.current = null;
+    setPanel((cur) => (cur.kind === 'none' ? { kind: 'envelope', stepIndex: idx } : cur));
+  }, [transition, guide, v.items.length]);
+
+  // 단계 전환이 아닌 타이밍에 자료가 늘어나면 자동으로 띄우지 않고 알림만 준다
+  useEffect(() => {
+    const keys = new Set(v.items.map((i) => i.key));
+    const prev = knownKeys.current;
+    knownKeys.current = keys;
+    if (!prev) return;
+    const added = [...keys].filter((k) => !prev.has(k));
+    if (added.length && autoOpen.current === null && !transition) { toast('📩 봉투가 도착했습니다'); sfx.cardSlide(); }
+  }, [v.items.length]);
 
   useEffect(() => { if (props.engine) (props.engine as any).camLift = v.stage === 'flow' ? 40 : 0; }, [v.stage, props.engine]);
 
@@ -122,7 +148,6 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
         </div>
       )}
 
-      {v.stage === 'flow' && v.me.participant && <Mailbox bundles={bundles} onOpen={(b) => setPanel({ kind: 'envelope', stepIndex: b.stepIndex })} />}
       {v.stage === 'flow' && v.me.participant && <CardHand />}
 
       {panel.kind === 'envelope' && (() => {
@@ -151,6 +176,7 @@ export function MMGame(props: { engine: { tableItems: number; inputBlocked: () =
       {isVote && v.vote && <VoteBoard minimized={voteMin} onToggle={() => setVoteMin(!voteMin)} />}
       {v.stage === 'ending' && v.ending && <Ending minimized={endingMin} onToggle={() => setEndingMin(!endingMin)} />}
 
+      <Presentation />
       <CardSpotlight />
       {guide && !transition && <Guide onClose={() => { setGuide(false); storage.setPref('guideSeen', true); }} />}
 

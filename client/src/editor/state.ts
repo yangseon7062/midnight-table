@@ -40,7 +40,7 @@ export async function uploadImage(file: File): Promise<string | null> {
 }
 
 export function newScenarioTemplate(): Scenario {
-  const zones = MAPS.salon.defaultZones.map((z) => ({ id: `z-${z.id}`, name: z.name, rect: { ...z.rect }, maxOccupants: null }));
+  const zones = MAPS.salon.defaultZones.map((z) => ({ id: `z-${z.id}`, name: z.name, rect: { ...z.rect } }));
   return {
     id: uid('sc'), title: '새 시나리오', subtitle: '', summary: '', cover: null, minPlayers: 2, maxPlayers: 2, playtimeMin: 60, tags: [], published: false,
     settings: { voteVisibility: 'public' },

@@ -195,7 +195,7 @@ export function ZonesTab() {
     const p = toWorld(e);
     if (mode === 'create') {
       const nid = uid('z');
-      update((d) => { d.zones.push({ id: nid, name: `구역 ${d.zones.length + 1}`, rect: { x: snap(p.x), y: snap(p.y), w: 16, h: 16 }, maxOccupants: null }); });
+      update((d) => { d.zones.push({ id: nid, name: `구역 ${d.zones.length + 1}`, rect: { x: snap(p.x), y: snap(p.y), w: 16, h: 16 } }); });
       setSel(nid);
       drag.current = { id: nid, mode: 'resize', sx: p.x, sy: p.y, orig: { x: snap(p.x), y: snap(p.y), w: 16, h: 16 } };
       return;
@@ -229,7 +229,7 @@ export function ZonesTab() {
           {s.zones.map((z) => (
             <div key={z.id} class={`zone-rect ${sel === z.id ? 'sel' : ''}`} style={{ left: `${(z.rect.x / W) * 100}%`, top: `${(z.rect.y / H) * 100}%`, width: `${(z.rect.w / W) * 100}%`, height: `${(z.rect.h / H) * 100}%` }}
               onPointerDown={(e) => onDown(e, z.id, 'move')} onPointerMove={onMove} onPointerUp={onUp}>
-              <span class="zl">{z.name}{z.maxOccupants ? ` · 최대 ${z.maxOccupants}명` : ''}</span>
+              <span class="zl">{z.name}</span>
               <span class="rh" onPointerDown={(e) => onDown(e, z.id, 'resize')} onPointerMove={onMove} onPointerUp={onUp} />
             </div>
           ))}
@@ -237,18 +237,16 @@ export function ZonesTab() {
         <div class="zone-side">
           {s.zones.map((z, i) => (
             <div key={z.id} class={`zone-item ${sel === z.id ? 'sel' : ''}`} onClick={() => setSel(z.id)}>
-              <b>{z.name}</b><span class="dim small">{z.rect.w / TILE}×{z.rect.h / TILE}칸 · {z.maxOccupants ? `최대 ${z.maxOccupants}명` : '인원 제한 없음'}</span>
+              <b>{z.name}</b><span class="dim small">{z.rect.w / TILE}×{z.rect.h / TILE}칸</span>
               <ListControls index={i} length={s.zones.length} onMove={(to) => update((d) => move(d.zones, i, to))} onRemove={() => update((d) => { d.zones.splice(i, 1); })} />
             </div>
           ))}
           {zsel && (
             <div class="ed-sub">
               <Field label="구역 이름"><Text value={zsel.name} maxLength={20} onChange={(v) => update((d) => { d.zones[si].name = v; })} /></Field>
-              <Field label="최대 인원"><Check label="인원 제한 사용" checked={zsel.maxOccupants != null} onChange={(on) => update((d) => { d.zones[si].maxOccupants = on ? 2 : null; })} /></Field>
-              {zsel.maxOccupants != null && <Num min={1} max={12} value={zsel.maxOccupants} onChange={(v) => update((d) => { d.zones[si].maxOccupants = v; })} />}
             </div>
           )}
-          <button type="button" class="ed-btn" onClick={() => update((d) => { d.zones = map.defaultZones.map((z) => ({ id: `z-${z.id}`, name: z.name, rect: { ...z.rect }, maxOccupants: null })); })}>기본 방 구역으로 되돌리기</button>
+          <button type="button" class="ed-btn" onClick={() => update((d) => { d.zones = map.defaultZones.map((z) => ({ id: `z-${z.id}`, name: z.name, rect: { ...z.rect } })); })}>기본 방 구역으로 되돌리기</button>
         </div>
       </div>
     </div>

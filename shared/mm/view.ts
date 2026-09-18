@@ -32,6 +32,20 @@ export interface MMItemView {
   clue?: { type: 'text' | 'image'; text: string; image: string | null; caption: string; scope: 'public' | 'private' };
 }
 
+/** 테이블에 펼쳐진 자료 — 같은 대화 채널(공용 공간 또는 같은 밀담 구역)에 있는 사람에게만 보인다 */
+export interface MMPresentationView {
+  key: string;
+  /** 펼친 사람 */
+  byUserId: string;
+  byCharId: string | null;
+  byName: string;
+  at: number;
+  mine: boolean;
+  /** 비공개 자료를 공개한 경우 (되돌릴 수 없음) */
+  wasPrivate: boolean;
+  item: MMItemView;
+}
+
 export interface MMCardView { id: string; name: string; description: string; uses: number; usesLeft: number }
 
 export interface MMLogEntry { at: number; kind: 'step' | 'card' | 'extend' | 'vote' | 'system'; text: string; charId?: string }
@@ -105,6 +119,7 @@ export interface MMView {
   log: MMLogEntry[];
   extend: { cooldownUntil: number; lastBy: string | null };
   vote: MMVoteView | null;
+  presentation: MMPresentationView | null;
   ending: MMEndingView | null;
 }
 
@@ -114,7 +129,8 @@ export type MMEvent =
   | { type: 'extend'; payload: { by: string; sec: number } }
   | { type: 'voteConfirm'; payload: { charId: string } }
   | { type: 'ending'; payload: {} }
-  | { type: 'castStart'; payload: { startsAt: number } };
+  | { type: 'castStart'; payload: { startsAt: number } }
+  | { type: 'present'; payload: { byName: string; title: string; wasPrivate: boolean } };
 
 export const MM_MODULE_ID = 'murder-mystery';
 export const EXTEND_COOLDOWN_MS = 10_000;

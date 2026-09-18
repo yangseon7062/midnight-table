@@ -89,6 +89,11 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 .chat.in-zone { border-color: rgba(217,179,108,0.7); box-shadow: 0 0 0 1px rgba(217,179,108,0.25), var(--shadow); }
 .chat-head { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; background: none; border: none; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 11.5px; color: var(--text-dim); text-align: left; }
 .chat.in-zone .chat-head { color: var(--gold-hi); background: rgba(217,179,108,0.08); }
+.chat-filter { display: flex; align-items: center; gap: 4px; padding: 4px 8px 0; }
+.chat-filter .cf { font-family: var(--pixel); font-size: 11px; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--text-dim); cursor: pointer; }
+.chat-filter .cf:hover { color: var(--text); }
+.chat-filter .cf.on { color: var(--gold-hi); border-color: var(--line-strong); background: rgba(217, 179, 108, 0.12); }
+.chat-filter .tiny { margin-left: auto; }
 .chat-list { height: 210px; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; font-size: 13.5px; line-height: 1.45; }
 .chat-line { word-break: break-word; }
 .chat-line .mono { font-size: 10px; margin-right: 4px; }
@@ -110,9 +115,16 @@ kbd { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border: 1px s
 .ctl.mic.on { border-color: rgba(95,191,124,0.8); background: linear-gradient(rgba(40,80,50,0.9), rgba(20,40,26,0.9)); }
 .ctl.mic.off, .ctl.mic.none { border-color: rgba(163,38,42,0.6); }
 .ctl-wrap { position: relative; }
-.emote-pop { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(4, 38px); gap: 4px; padding: 6px; }
-.emote-pop button { font-size: 20px; background: none; border: none; cursor: pointer; border-radius: 8px; padding: 4px; }
+.emote-pop { position: absolute; bottom: 64px; left: 50%; transform: translateX(-50%); padding: 6px 6px 4px; }
+.emote-grid { display: grid; grid-template-columns: repeat(4, 38px); gap: 4px; }
+.emote-pop button { font-size: 20px; background: none; border: none; cursor: pointer; border-radius: 8px; padding: 4px; transition: transform 0.08s ease, background 0.12s ease; }
 .emote-pop button:hover { background: rgba(255,255,255,0.08); transform: scale(1.15); }
+/* 고른 순간에만 잠깐 튀어 올라 '보냈다'는 느낌을 준다 (목록은 닫히지 않는다) */
+.emote-pop button.sent { animation: emotesent 0.42s ease; background: rgba(232,207,152,0.16); }
+@keyframes emotesent { 0% { transform: scale(1); } 30% { transform: scale(1.5) translateY(-4px); } 100% { transform: scale(1); } }
+.emote-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; padding: 3px 4px 0; border-top: 1px solid var(--line); }
+.emote-close { font-size: 11px !important; padding: 2px 6px !important; color: var(--text-dim); }
+.emote-close:hover { color: var(--gold-hi); }
 
 .zone-toast { position: absolute; top: 120px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 22px; border-radius: 12px; background: rgba(14,10,8,0.88); border: 1px solid var(--line-strong); box-shadow: var(--shadow); animation: zonein 2.6s ease forwards; pointer-events: none; text-align: center; }
 .zone-toast.in b { color: var(--gold-hi); font-size: 16px; }

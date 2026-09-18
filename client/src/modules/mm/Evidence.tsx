@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { MMItemView } from '@shared/mm/view';
 import { RichText, view } from './util';
+import { PresentButton } from './Present';
 import { sfx } from '../../audio/sfx';
 
 /** 단서 보드: 코르크판에 핀으로 꽂힌 증거들 */
@@ -91,6 +92,7 @@ export function EvidenceViewer(props: { item: MMItemView; onClose: () => void; o
                 <button class={`btn sm ${loupe ? 'gold' : ''}`} onClick={() => setLoupe(!loupe)} title="돋보기">🔍 돋보기</button>
               </>
             )}
+            <PresentButton item={props.item} />
             <button class="btn ghost sm" onClick={props.onClose}>닫기 (Esc)</button>
           </div>
         </div>

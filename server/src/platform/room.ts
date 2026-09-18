@@ -239,14 +239,7 @@ export class Room {
         this.fix(m);
         return;
       }
-      const z = zoneAt(this.zoneDefs, x, y);
-      if (z && z.id !== m.zoneId && z.maxOccupants) {
-        const occ = [...this.members.values()].filter((o) => o.zoneId === z.id && !o.absent).length;
-        if (occ >= z.maxOccupants) {
-          this.fix(m, `'${z.name}' 은(는) 최대 ${z.maxOccupants}명까지만 들어갈 수 있습니다`);
-          return;
-        }
-      }
+      // 밀담 구역에는 인원 제한이 없다. 들어가려는 행동 자체를 막지 않는다.
       m.moveBudget -= d;
       m.x = x; m.y = y;
       if (m.seat) {
@@ -271,6 +264,8 @@ export class Room {
       m.zoneId = next;
       this.zonesDirty = true;
       this.recomputeVoice();
+      // 대화 채널이 바뀌면 게임 뷰도 달라질 수 있다 (예: 테이블에 펼쳐 둔 자료가 보이는 범위)
+      if (this.game) this.pushGame();
     }
   }
 
@@ -525,6 +520,8 @@ export class Room {
       }),
       pushState: () => this.pushGame(),
       emit: (target, type, payload) => { for (const sid of sidsOf(target)) io.to(sid).emit('g:event', { type, payload }); },
+      channelOf: (uid) => { const m = this.members.get(uid); return m ? this.channelOf(m) : 'public'; },
+      audienceOf: (ch) => this.audienceOf(ch),
       systemMessage: (text, audience = 'all') => {
         const ids = audience === 'all' ? [...this.members.keys()] : audience;
         this.addMessage({ channel: 'system', channelName: '게임', fromId: null, fromName: null, text, kind: 'game' }, ids);
