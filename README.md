@@ -83,7 +83,7 @@ data/uploads/      단서·표지 이미지
 
 ### 로비 레이어와 게임 모듈의 분리
 
-로비 레이어(`server/src/platform`, `client/src/ui`, `client/src/world`)는 **방·이동·구역·채팅·음성·테이블(게임 고르기)** 만 압니다. 설정집·공용집·투표 같은 단어는 전부 `modules/murder-mystery` 안에만 있습니다. 모듈은 `GameHost`를 통해 로비에 딱 네 가지만 요청합니다: 상태 갱신 알림, 일회성 연출 이벤트, 구역 목록/격리 on·off, 이름표 라벨. 로비는 모듈이 보낸 뷰를 그대로 전달할 뿐 내용을 해석하지 않습니다.
+로비 레이어(`server/src/platform`, `client/src/ui`, `client/src/world`)는 **방·이동·구역·채팅·음성·테이블(게임 고르기)** 만 압니다. 설정집·공용집·투표 같은 단어는 전부 `modules/murder-mystery` 안에만 있습니다. 모듈은 `GameHost`를 통해 로비에 소수의 항목만 요청합니다: 상태 갱신 알림, 일회성 연출 이벤트, 시스템 메시지·토스트, 구역 목록/격리 on·off, 이름표 배지, 게임 종료, 저장 표시. 로비는 모듈이 보낸 뷰를 그대로 전달할 뿐 내용을 해석하지 않습니다.
 
 **새 장르 추가 방법**
 1. `server/src/modules/<장르>/`에 `GameModuleDefinition`을 구현하고 `server/src/index.ts`에서 `modules.set(...)`으로 등록
