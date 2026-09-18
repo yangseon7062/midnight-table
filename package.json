@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:e2e": "node tests/run-all.mjs",
     "test": "node tests/run-all.mjs",
-    "serve": "npm run build && npm start"
+    "serve": "npm run build && npm start",
+    "backup": "node scripts/backup.mjs"
   },
   "engines": {
     "node": ">=20"

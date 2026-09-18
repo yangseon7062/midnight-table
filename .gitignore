@@ -4,3 +4,6 @@ data/runtime
 data/uploads/tmp
 tests/artifacts
 *.log
+.env
+.env.local
+backups

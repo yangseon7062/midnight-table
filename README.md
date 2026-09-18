@@ -25,8 +25,9 @@ npm start
 - TLS 인증서 지정: `SSL_KEY_FILE=key.pem SSL_CERT_FILE=cert.pem npm start`
 - 또는 https 리버스 프록시/터널(Cloudflare Tunnel, ngrok 등) 뒤에서 실행
 
-서로 다른 네트워크(NAT) 사이의 음성이 연결되지 않으면 TURN 서버를 지정하세요.
-`ICE_SERVERS='[{"urls":"turn:turn.example.com:3478","username":"u","credential":"p"}]'`
+서로 다른 네트워크(NAT) 사이의 음성은 대부분 STUN만으로 연결되지만, 방화벽이나 일부 통신사 환경에서는 실패할 수 있습니다(전체의 10~20% 정도). 그때를 위해 TURN 서버를 지정합니다.
+
+`.env.example`을 `.env`로 복사한 뒤 TURN 항목을 채우세요. 자격증명은 **서버가 대신 발급받아 `/api/config`로 내려주며, API 키는 브라우저로 나가지 않습니다.**
 
 | 환경변수 | 기본값 | 설명 |
 | --- | --- | --- |
@@ -34,7 +35,18 @@ npm start
 | `ADMIN_PASSWORD` | midnight-admin | 운영자 에디터 비밀번호 |
 | `RECONNECT_GRACE_MS` | 120000 | 연결이 끊긴 참가자를 기다리는 시간 |
 | `DATA_DIR` | ./data | 시나리오·업로드·방 상태 저장 폴더 |
-| `ICE_SERVERS` | Google STUN | WebRTC STUN/TURN 목록(JSON) |
+| `ICE_SERVERS` | Google STUN | STUN/TURN 목록을 직접 지정(JSON). 지정 시 아래 TURN 설정보다 우선 |
+| `METERED_TURN_URL` / `METERED_API_KEY` | 없음 | TURN 1순위 (서울 리전) |
+| `EXPRESSTURN_URL` / `_USERNAME` / `_CREDENTIAL` | 없음 | TURN 2순위 (백업) |
+| `SSL_KEY_FILE` / `SSL_CERT_FILE` | 없음 | 지정하면 https로 실행 |
+
+## 개발자·유지보수용 문서
+
+| 문서 | 내용 |
+| --- | --- |
+| `PROJECT.md` | 아키텍처, 설계 결정과 이유, 알려진 제약, 배포 환경 — **작업 전에 먼저 읽는 문서** |
+| `ISSUES.md` | 버그·기능 요청 목록 |
+| `TESTING.md` | 회귀 테스트 체크리스트 |
 
 ## 플레이 흐름
 
