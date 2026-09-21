@@ -6,7 +6,8 @@ const run = (label, cmd, env = {}) => {
 };
 run('클라이언트 빌드', 'npx vite build --config client/vite.config.ts --logLevel warn');
 run('타입 검사', 'npx tsc -p tsconfig.json --noEmit');
-run('규칙 단위 테스트', 'npx tsx tests/unit-mm.test.ts');
+run('규칙 단위 테스트 (머더미스터리)', 'npx tsx tests/unit-mm.test.ts');
+run('규칙 단위 테스트 (카드 대전 엔진)', 'npx tsx tests/unit-cb.test.ts');
 run('서버 시작 (3100, 유예 4초)', 'tests/server.sh 3100 /tmp/claude-0/data-t3100', { FRESH: '1', GRACE: '4000' });
 run('서버 로직 스모크', 'node tests/smoke-server.mjs', { URL: 'http://localhost:3100' });
 run('서버 재시작 (3100, 유예 4초)', 'tests/server.sh 3100 /tmp/claude-0/data-t3100', { FRESH: '1', GRACE: '4000' });

@@ -18,6 +18,7 @@ import { RoomManager } from './platform/roomManager';
 import type { GameModuleDefinition } from './platform/gameModule';
 import { ScenarioStore } from './modules/murder-mystery/store';
 import { createMurderMysteryModule } from './modules/murder-mystery';
+import { createCardBattleModule } from './modules/card-battle';
 import { createAdminRouter } from './admin/api';
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -37,7 +38,11 @@ const scenarios = new ScenarioStore(join(DATA, 'scenarios'));
 const modules = new Map<string, GameModuleDefinition>();
 const mm = createMurderMysteryModule(scenarios);
 modules.set(mm.id, mm);
+const cb = createCardBattleModule();
+modules.set(cb.id, cb);
 // ↑ 새 장르 모듈은 여기서 등록한다: modules.set(other.id, other)
+//   등록 순서가 로비의 모듈 목록 순서다. 머더미스터리를 앞에 두는 것을 전제로 한 테스트가 있으니 뒤에 붙인다.
+//   서버만 등록하면 게임은 시작되는데 화면이 안 뜬다 — client/src/modules/registry.ts 에도 넣어야 한다.
 
 const users = new UserStore(join(DATA, 'runtime', 'users.json'));
 const manager = new RoomManager(io, users, modules, join(DATA, 'runtime', 'rooms.json'));

@@ -1,5 +1,6 @@
 import type { FunctionComponent } from 'preact';
 import { MMGame } from './mm/MMGame';
+import { CBGame } from './cb/CBGame';
 
 /**
  * 클라이언트 게임 모듈 등록부.
@@ -13,4 +14,6 @@ export interface GameModuleUI {
 
 export const clientModules: Record<string, GameModuleUI> = {
   'murder-mystery': { id: 'murder-mystery', Component: MMGame },
+  // 서버에만 등록하면 게임은 시작되는데 화면이 안 뜬다. 여기까지 넣어야 등록이 끝난다 (기준서 11-1).
+  'card-battle': { id: 'card-battle', Component: CBGame },
 };

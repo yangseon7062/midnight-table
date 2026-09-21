@@ -187,5 +187,94 @@ await call(B.s, 'g:action', { type: 'leave' });
 await sleep(300);
 const snapAfter = await call(C.s, 'rooms:list');
 check(snapAfter.rooms[0].status === 'waiting', '엔딩 후 방이 대기 상태로 복귀');
+// ─────────────────────────────────────────────────────────────
+// 카드 대전 — 2단계: 등록 3종이 실제로 붙었는가 + 정보 차단
+// A·B 가 플레이어, C 는 앉지 않은 관전자다.
+// ─────────────────────────────────────────────────────────────
+console.log('\n▶ 카드 대전');
+// 앞 시나리오에서 A 가 테이블에서 멀어졌으므로, 새 방에 새 클라이언트로 붙는다.
+const D = await client('두리');
+const E = await client('이든');
+const F = await client('관전자2');
+const cbRoom = (await call(D.s, 'rooms:create', { title: '카드 대전 방' })).roomId;
+const jD = await call(D.s, 'room:join', { roomId: cbRoom });
+const jE = await call(E.s, 'room:join', { roomId: cbRoom });
+await call(F.s, 'room:join', { roomId: cbRoom });
+
+// 앞 시나리오와 같은 방식으로 걸어가 앉는다 (서버가 좌석 거리와 이동 속도를 검증한다)
+const dMe = jD.snapshot.members.find((m) => m.userId === D.user.userId);
+const eMe = jE.snapshot.members.find((m) => m.userId === E.user.userId);
+await Promise.all([
+  (async () => {
+    await walkTo(D, dMe.x, dMe.y, dMe.x, 300);
+    await walkTo(D, dMe.x, 300, 270, 300);
+    await walkTo(D, 270, 300, 270, 222);
+    await walkTo(D, 270, 222, seat0.x, seat0.y);
+  })(),
+  (async () => { await walkTo(E, eMe.x, eMe.y, seat4.x, seat4.y); })(),
+]);
+
+const list2 = await call(D.s, 'rooms:list');
+const cbMod = list2.modules.find((m) => m.id === 'card-battle');
+check(!!cbMod, '모듈 목록에 카드 대전이 뜸');
+check(cbMod?.contents.length === 2, '콘텐츠 2개 (대전 / AI 연습)');
+const pvp = cbMod?.contents.find((c) => c.contentId === 'card-battle');
+const solo = cbMod?.contents.find((c) => c.contentId === 'card-battle-solo');
+check(pvp?.minPlayers === 2 && pvp?.maxPlayers === 2, '대전 콘텐츠는 2인 고정 (3명 이상 앉는 상황이 안 생김)');
+check(solo?.minPlayers === 1 && solo?.maxPlayers === 1, 'AI 연습 콘텐츠는 1인');
+
+const sitD = await call(D.s, 'sit', { tableId: 'main', index: 0 });
+const sitE = await call(E.s, 'sit', { tableId: 'main', index: 4 });
+check(sitD.ok && sitE.ok, `두 명 착석 (D: ${sitD.ok ? 'ok' : sitD.error} / E: ${sitE.ok ? 'ok' : sitE.error})`);
+r = await call(D.s, 'table:select', { moduleId: 'card-battle', contentId: 'card-battle' });
+check(r.ok, `테이블에서 카드 대전을 고를 수 있음 ${r.ok ? '' : `(${r.error})`}`);
+await call(D.s, 'table:ready', { ready: true });
+await call(E.s, 'table:ready', { ready: true });
+for (let i = 0; i < 100 && D.state?.moduleId !== 'card-battle'; i++) await sleep(100);
+check(D.state?.moduleId === 'card-battle', '세션 시작');
+check(D.state?.phase === 'charSelect', '캐릭터 선택 단계부터 시작');
+check(D.state?.turnLimit === 20, '턴 상한 20이 뷰에 실림');
+
+r = await call(D.s, 'g:action', { type: 'chooseChar', payload: { characterId: 'c1' } });
+check(r.ok, 'D 캐릭터 확정');
+await sleep(250);
+check(D.state.p1.characterId === 'c1', '내가 고른 캐릭터는 내 뷰에 보임');
+check(E.state.p1.characterId === null, '상대가 무엇을 골랐는지는 확정 전까지 안 보임');
+check(F.state.spectator === true && F.state.me === null, '관전자는 spectator 이고 손패가 없음');
+check(F.state.p1.characterId === null, '관전자에게도 선택 중인 캐릭터는 안 보임');
+
+await call(E.s, 'g:action', { type: 'chooseChar', payload: { characterId: 'c5' } });
+await sleep(300);
+check(D.state.p2.characterId === 'c5' && E.state.p1.characterId === 'c1', '둘 다 확정되면 동시 공개');
+check(F.state.p1.characterId === 'c1' && F.state.p2.characterId === 'c5', '관전자도 이때 함께 봄');
+check(D.state.p1.hp === 200 && D.state.p2.hp === 190, '공개 시점에 HP = Max HP (C1 200 / C5 190)');
+
+for (let i = 0; i < 80 && D.state.phase !== 'selecting'; i++) await sleep(100);
+check(D.state.phase === 'selecting', '대치 연출 뒤 카드 선택 단계로');
+check(D.state.me?.hand.length === 14, '손패 14장');
+check(D.state.turn === 1, '첫 턴');
+
+r = await call(D.s, 'g:action', { type: 'submit', payload: { cardIds: ['c1_a', 'c1_b', 'move_up'] } });
+check(r.ok, 'D 제출 (c1_a → c1_b → move_up, 기력 25+55 = 80)');
+r = await call(D.s, 'g:action', { type: 'submit', payload: { cardIds: ['move_up', 'move_down', 'move_left'] } });
+check(!r.ok, '제출 뒤에는 다시 낼 수 없음');
+r = await call(F.s, 'g:action', { type: 'submit', payload: { cardIds: ['move_up', 'move_down', 'move_left'] } });
+check(!r.ok, '관전자는 행동할 수 없음');
+await sleep(250);
+check(E.state.p1.submitted === true, '상대에게는 "선택 완료" 여부만 보임');
+
+const bJson = JSON.stringify(E.state);
+const cJson = JSON.stringify(F.state);
+check(!bJson.includes('c1_a') && !bJson.includes('c1_b'), '상대 뷰 페이로드에 미공개 카드 id 가 없음');
+check(!cJson.includes('c1_a') && !cJson.includes('c1_b'), '관전자 뷰 페이로드에도 없음');
+
+await call(E.s, 'g:action', { type: 'submit', payload: { cardIds: ['guard', 'move_up', 'move_down'] } });
+for (let i = 0; i < 100 && (D.state.revealed?.length ?? 0) < 1; i++) await sleep(100);
+check(D.state.revealed.length === 1, '슬롯 1만 먼저 열림 (한 번에 세 장을 다 주지 않음)');
+check(D.state.revealed[0].cards.p1 === 'c1_a' && D.state.revealed[0].cards.p2 === 'guard', '열린 슬롯의 양쪽 카드는 공개됨');
+const cJson2 = JSON.stringify(F.state);
+check(cJson2.includes('c1_a'), '관전자도 열린 슬롯은 봄');
+check(!cJson2.includes('c1_b'), '관전자가 아직 안 열린 슬롯 2의 카드는 못 봄');
+
 console.log(failures ? `\n실패 ${failures}건` : '\n모든 검사 통과');
 process.exit(failures ? 1 : 0);
