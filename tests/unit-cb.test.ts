@@ -35,6 +35,9 @@ import {
   validateSubmission,
 } from '../server/src/modules/card-battle/engine/turnResolver';
 import { forfeit, hpRatio } from '../server/src/modules/card-battle/engine/winResolver';
+import { aiContext } from '../server/src/modules/card-battle/ai/context';
+import { normalPick } from '../server/src/modules/card-battle/ai/normalAI';
+import { hardPick } from '../server/src/modules/card-battle/ai/hardAI';
 
 let failures = 0;
 const check = (c: boolean, m: string) => { console.log(`${c ? '  ✔' : '  ✘'} ${m}`); if (!c) failures++; };
@@ -399,6 +402,84 @@ section('결정성과 복구 (기준서 11-2)');
   submitCards(st, 'p2', ['guard', 'move_up', 'move_down']);
   const res = resolveTurn(st);
   check(st.reveal?.slot === 0 && res.length === 3, '해결 결과는 서버가 전부 갖고, 공개는 슬롯 0 부터 시작');
+}
+
+/* ═══════════════════════════ AI ═══════════════════════════ */
+section('AI (기준서 10번)');
+
+/** AI 대 AI 한 판. hardSide 쪽만 Hard 를 쓴다. */
+function aiMatch(c1: string, c2: string, hardSide: Side, seed: number) {
+  const st = createBattle({ p1UserId: null, p2UserId: null, now: T0, seed });
+  chooseCharacter(st, 'p1', c1);
+  chooseCharacter(st, 'p2', c2);
+  revealCharacters(st);
+  beginSelecting(st, T0);
+  const history: Record<Side, string[]> = { p1: [], p2: [] };
+  let guard = 0;
+  while (st.phase !== 'finished' && guard++ < 60) {
+    for (const side of ['p1', 'p2'] as const) {
+      const ctx = aiContext(st, side, history[side === 'p1' ? 'p2' : 'p1']);
+      submitCards(st, side, side === hardSide ? hardPick(ctx) : normalPick(ctx));
+    }
+    for (const r of resolveTurn(st)) { history.p1.push(r.cards.p1); history.p2.push(r.cards.p2); }
+    advanceAfterTurn(st, T0);
+  }
+  return { result: st.result, turns: st.turn };
+}
+
+{
+  // 입력에 상대의 이번 턴 제출이 들어갈 자리 자체가 없어야 한다
+  const st = battle('c1', 'c5');
+  submitCards(st, 'p1', ['c1_a', 'c1_b', 'move_up']);
+  const ctx = aiContext(st, 'p2', []);
+  const json = JSON.stringify(ctx);
+  check(!json.includes('c1_a') && !json.includes('c1_b'), 'AI 입력에 상대의 미공개 제출이 없음');
+  check(!('submission' in (ctx.foe as object)), 'AI 입력의 상대 자리에 제출 필드가 아예 없음');
+  check(ctx.hand.length === 14 && ctx.foe.characterId === 'c1', 'AI 는 자기 손패와 공개된 상대 캐릭터는 본다');
+}
+{
+  // 어떤 상태에서도 합법적인 3장을 내야 한다
+  let ok = true;
+  for (let i = 0; i < 40; i++) {
+    const st = battle(`c${(i % 8) + 1}`, `c${((i + 3) % 8) + 1}`, i + 1);
+    st.p1.en = i % 3 === 0 ? 0 : (i * 7) % 110;
+    place(st, { row: i % 3, col: i % 4 }, { row: (i + 1) % 3, col: (i + 2) % 4 });
+    for (const pick of [normalPick(aiContext(st, 'p1', [])), hardPick(aiContext(st, 'p1', []))]) {
+      if (!validateSubmission(st, 'p1', pick).ok) { ok = false; break; }
+    }
+    if (!ok) break;
+  }
+  check(ok, 'Normal / Hard 둘 다 어떤 상태에서도 합법적인 3장을 낸다 (기력 0 포함)');
+}
+{
+  // 닿으면 때린다 / 멀면 다가간다
+  const near = battle('c1', 'c1');
+  place(near, { row: 1, col: 1 }, { row: 1, col: 2 });
+  const p1 = normalPick(aiContext(near, 'p1', []));
+  check(p1.some((id) => id.startsWith('c1_')), 'Normal: 사거리 안이면 기술을 낸다');
+
+  const far = battle('c1', 'c1');
+  place(far, { row: 0, col: 0 }, { row: 2, col: 3 });
+  const p2 = normalPick(aiContext(far, 'p1', []));
+  check(p2.some((id) => id.startsWith('move_')), 'Normal: 멀면 다가간다');
+}
+{
+  const { result } = aiMatch('c1', 'c5', 'p1', 7);
+  check(result !== null, 'AI 대 AI 판이 끝까지 간다');
+}
+{
+  // Hard 가 Normal 을 이기는 편이어야 한다. 양쪽 자리를 바꿔가며 돌려 자리 유불리를 지운다.
+  let hardWins = 0, normalWins = 0, draws = 0;
+  for (let i = 0; i < 48; i++) {
+    const c1 = `c${(i % 8) + 1}`, c2 = `c${((i + 4) % 8) + 1}`;
+    const hardSide: Side = i % 2 === 0 ? 'p1' : 'p2';
+    const { result } = aiMatch(c1, c2, hardSide, 1000 + i);
+    if (!result || result.winner === 'draw') draws++;
+    else if (result.winner === hardSide) hardWins++;
+    else normalWins++;
+  }
+  console.log(`     (Hard ${hardWins} / Normal ${normalWins} / 무승부 ${draws})`);
+  check(hardWins > normalWins, 'Hard 가 Normal 보다 많이 이긴다');
 }
 
 console.log(failures ? `\n실패 ${failures}건` : '\n카드 대전 엔진 테스트 모두 통과');

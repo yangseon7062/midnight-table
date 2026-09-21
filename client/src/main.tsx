@@ -2,6 +2,7 @@ import { render } from 'preact';
 import './styles/base.css';
 import './styles/room.css';
 import './styles/mm.css';
+import './styles/cb.css';
 import { App } from './ui/App';
 import { boot } from './net/net';
 

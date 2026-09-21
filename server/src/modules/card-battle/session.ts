@@ -1,15 +1,20 @@
 import {
   CARD_SELECT_MS,
+  CB_CONTENT_SOLO,
   CB_MODULE_ID,
   CHAR_SELECT_MS,
+  OTHER,
   TURN_LIMIT,
   type BattleState,
   type PlayerState,
   type Side,
 } from '../../../../shared/cb/types';
-import type { CBMeView, CBPublicPlayer, CBView } from '../../../../shared/cb/view';
+import { aiContext } from './ai/context';
+import { normalPick } from './ai/normalAI';
+import { hardPick } from './ai/hardAI';
+import type { CBCardInfo, CBCharacterInfo, CBMeView, CBPublicPlayer, CBView } from '../../../../shared/cb/view';
 import { GameError, type GameHost, type GameSession, type ParticipantInfo } from '../../platform/gameModule';
-import { CHARACTER_IDS, getCharacter } from './data/characters';
+import { CHARACTERS, CHARACTER_IDS, getCharacter } from './data/characters';
 import { getCard, handIdsFor } from './data/cards';
 import { createBattle, maxEnOf, maxHpOf, playerOf, randInt } from './engine/battleState';
 import {
@@ -43,12 +48,17 @@ const CHAR_REVEAL_MS = 2200;
 /** 슬롯 한 장이 열리고 다음 장이 열릴 때까지 */
 const SLOT_REVEAL_MS = 1500;
 
+export type CBDifficulty = 'normal' | 'hard';
+
 export interface CBSnapshot {
   battle: BattleState;
   contentId: string;
   /** 다음 연출 진행 시각 */
   stepAt: number;
   ended: boolean;
+  /** 이미 공개된 카드들 — AI 가 상대의 과거 패턴을 읽는 데 쓴다 (기준서 10번) */
+  history: { p1: string[]; p2: string[] };
+  difficulty: CBDifficulty;
 }
 
 export type CBSessionInit =
@@ -60,6 +70,8 @@ export class CardBattleSession implements GameSession {
   readonly contentId: string;
   private stepAt = 0;
   private ended = false;
+  private history: { p1: string[]; p2: string[] } = { p1: [], p2: [] };
+  private difficulty: CBDifficulty = 'normal';
 
   constructor(private host: GameHost, init: CBSessionInit) {
     if ('snapshot' in init) {
@@ -68,6 +80,8 @@ export class CardBattleSession implements GameSession {
       this.contentId = s.contentId;
       this.ended = s.ended;
       this.stepAt = s.stepAt + init.shift;
+      this.history = s.history ?? { p1: [], p2: [] };
+      this.difficulty = s.difficulty ?? 'normal';
       this.applyTimeShift(init.shift);
       return;
     }
@@ -165,6 +179,16 @@ export class CardBattleSession implements GameSession {
       return { ok: true };
     }
 
+    if (type === 'setDifficulty') {
+      if (this.contentId !== CB_CONTENT_SOLO) throw new GameError('AI 연습 판에서만 바꿀 수 있습니다');
+      if (this.st.phase !== 'charSelect') throw new GameError('판이 시작되기 전에만 바꿀 수 있습니다');
+      const level = body.level;
+      if (level !== 'normal' && level !== 'hard') throw new GameError('알 수 없는 난이도입니다');
+      this.difficulty = level;
+      this.push();
+      return { ok: true };
+    }
+
     throw new GameError('알 수 없는 요청입니다');
   }
 
@@ -187,14 +211,31 @@ export class CardBattleSession implements GameSession {
     this.stepAt = this.host.now() + SLOT_REVEAL_MS;
   }
 
-  /** AI 쪽 카드를 채운다. AI 는 자동 선택 3연속 패배 규칙의 대상이 아니다. */
+  /**
+   * AI 쪽 카드를 채운다. AI 는 자동 선택 3연속 패배 규칙의 대상이 아니다.
+   * AI 에게 넘기는 입력에는 상대의 이번 턴 제출이 아예 들어 있지 않다 (ai/context.ts).
+   * AI 가 낸 조합도 사람 것과 똑같이 검증한다 — 통과 못 하면 랜덤으로 떨어뜨린다.
+   */
   private fillAI(): void {
     if (this.st.phase !== 'selecting') return;
     for (const side of SIDES) {
       const p = playerOf(this.st, side);
       if (p.userId !== null || p.submission) continue;
-      p.submission = randomSubmission(this.st, side);
+      const ctx = aiContext(this.st, side, this.history[OTHER[side]]);
+      const pick = this.difficulty === 'hard' ? hardPick(ctx) : normalPick(ctx);
+      const check = validateSubmission(this.st, side, pick);
+      p.submission = check.ok ? pick : randomSubmission(this.st, side);
       p.submissionAuto = true;
+    }
+  }
+
+  /** 세 슬롯이 다 열린 뒤, 그 턴의 카드를 공개 이력에 쌓는다 */
+  private recordHistory(): void {
+    const rv = this.st.reveal;
+    if (!rv) return;
+    for (const r of rv.results) {
+      this.history.p1.push(r.cards.p1);
+      this.history.p2.push(r.cards.p2);
     }
   }
 
@@ -211,6 +252,7 @@ export class CardBattleSession implements GameSession {
         this.push();
         return;
       }
+      this.recordHistory();
       if (this.isFinished()) { this.finish(); return; }
       advanceAfterTurn(this.st, now);
       if (this.isFinished()) { this.finish(); return; }
@@ -321,6 +363,40 @@ export class CardBattleSession implements GameSession {
     };
   }
 
+  /**
+   * 이 뷰가 그려야 할 카드들 — **딱 필요한 만큼만.**
+   *
+   * 내 손패와, 이미 열린 슬롯에 실제로 나온 카드뿐이다.
+   * 상대 캐릭터의 기술 네 장을 통째로 실어 보내면 "무엇을 낼 수 있는가"가 아니라
+   * 페이로드 검사가 무뎌진다 — 아직 안 열린 슬롯의 카드 id 가 목록에 섞여 있으면
+   * 실제 누설과 구분할 수 없어진다. 좁게 보내야 누설 검사가 의미를 갖는다.
+   */
+  private cardsFor(viewer: Side | null): CBCardInfo[] {
+    const ids = new Set<string>();
+    if (viewer) for (const id of this.meOf(viewer).hand) ids.add(id);
+    const rv = this.st.reveal;
+    if (rv) {
+      for (const r of rv.results.slice(0, rv.slot + 1)) {
+        ids.add(r.cards.p1);
+        ids.add(r.cards.p2);
+      }
+    }
+    return [...ids].map((id) => cardInfo(id));
+  }
+
+  /** 8명 명단은 캐릭터 선택 단계에서만 보낸다. 그 뒤로는 쓸 데가 없어 payload 만 늘린다. */
+  private rosterFor(): CBCharacterInfo[] {
+    if (this.st.phase !== 'charSelect' && this.st.phase !== 'charReveal') return [];
+    return CHARACTERS.map((c) => ({
+      id: c.id,
+      label: c.label,
+      maxHp: c.maxHp,
+      maxEn: c.maxEn,
+      note: c.note,
+      skills: c.skillIds.map((id) => cardInfo(id)),
+    }));
+  }
+
   viewFor(userId: string): CBView {
     const viewer = this.sideOf(userId);
     const rv = this.st.reveal;
@@ -340,10 +416,26 @@ export class CardBattleSession implements GameSession {
       // 열린 슬롯까지만. 아직 안 열린 슬롯의 카드 id 는 여기 실리지 않는다.
       revealed: rv ? rv.results.slice(0, rv.slot + 1) : [],
       result: this.st.result,
+      cards: this.cardsFor(viewer),
+      roster: this.rosterFor(),
+      solo: this.contentId === CB_CONTENT_SOLO,
+      difficulty: this.difficulty,
     };
   }
 
   snapshot(): CBSnapshot {
-    return { battle: this.st, contentId: this.contentId, stepAt: this.stepAt, ended: this.ended };
+    return {
+      battle: this.st,
+      contentId: this.contentId,
+      stepAt: this.stepAt,
+      ended: this.ended,
+      history: this.history,
+      difficulty: this.difficulty,
+    };
   }
+}
+
+function cardInfo(id: string): CBCardInfo {
+  const c = getCard(id);
+  return { id, type: c.type, energyCost: c.energyCost, damage: c.damage, range: c.rangePattern, move: c.move };
 }

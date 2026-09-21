@@ -1,4 +1,23 @@
-import type { BattleResult, CBPhase, Pos, Side, SlotResult } from './types';
+import type { BattleResult, CardType, CBPhase, MoveSpec, Pos, RangePattern, Side, SlotResult } from './types';
+
+/**
+ * 화면이 카드를 그리는 데 필요한 만큼의 카드 정보.
+ *
+ * 수치 표(기준서 9번)는 서버의 data/ 한 곳에만 둔다. 클라이언트가 같은 표를 또 갖고 있으면
+ * 밸런스를 고칠 때 두 군데를 맞춰야 하고, 어긋나면 화면이 거짓말을 한다.
+ * 그래서 필요한 카드만 뷰에 실어 보낸다 — 내 손패 14장과, 공개된 두 캐릭터의 기술.
+ */
+export interface CBCardInfo {
+  id: string;
+  type: CardType;
+  energyCost: number;
+  /** 공격만 */
+  damage: number;
+  /** 공격만 — 보드에 닿는 칸을 미리 보여줄 때 쓴다 */
+  range: RangePattern | null;
+  /** 이동만 */
+  move: MoveSpec | null;
+}
 
 /**
  * 서버 → 클라이언트 카드 대전 뷰 (기준서 5번, 5-1).
@@ -42,6 +61,16 @@ export interface CBMeView {
   affordable: readonly string[];
 }
 
+/** ⓪ 캐릭터 선택 화면이 8명을 늘어놓는 데 필요한 정보. 전부 공개 정보다. */
+export interface CBCharacterInfo {
+  id: string;
+  label: string;
+  maxHp: number;
+  maxEn: number;
+  note: string;
+  skills: readonly CBCardInfo[];
+}
+
 export interface CBView {
   moduleId: string;
   contentId: string;
@@ -59,4 +88,12 @@ export interface CBView {
   /** 지금까지 열린 슬롯만. 아직 안 열린 슬롯은 들어 있지 않다. */
   revealed: readonly SlotResult[];
   result: BattleResult | null;
+  /** 이 뷰가 그려야 할 카드들의 수치. 캐릭터가 공개되기 전에는 내 손패뿐이다. */
+  cards: readonly CBCardInfo[];
+  /** 캐릭터 선택 단계에서만 채워진다 — 그 뒤로는 쓸 데가 없어 빈 배열로 둔다 */
+  roster: readonly CBCharacterInfo[];
+  /** AI 연습 판인가 */
+  solo: boolean;
+  /** solo 일 때 AI 난이도. 캐릭터 선택 단계에서만 바꿀 수 있다. */
+  difficulty: 'normal' | 'hard';
 }

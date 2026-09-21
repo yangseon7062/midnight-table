@@ -15,6 +15,7 @@ run('재접속·관전·정원', 'node tests/smoke-reconnect.mjs', { URL: 'http:
 run('서버 재시작 복원', 'node tests/smoke-restart.mjs');
 run('서버 시작 (3000)', 'tests/server.sh 3000 /tmp/claude-0/data-e2e', { FRESH: '1' });
 run('2인 전체 플레이 (브라우저 UI)', 'node tests/play-2p.mjs');
+run('카드 대전 2인 플레이 (브라우저 UI)', 'node tests/play-cb.mjs');
 run('3인 밀담 구역 격리 (텍스트+음성)', 'node tests/zones-3p.mjs');
 run('운영자 시나리오 에디터', 'node tests/editor.mjs');
 console.log('\n✅ 모든 검증 통과');

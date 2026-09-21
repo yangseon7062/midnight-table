@@ -7,3 +7,12 @@ tests/artifacts
 .env
 .env.local
 backups
+
+# 로컬 도구와 생성물 — 저장소에 둘 이유가 없다
+# (sync-to-github.bat 는 배포 경로라서 일부러 추적에 남긴다)
+push-log.txt
+cleanup-and-tag.bat
+commit-message.txt
+push-to-github.bat
+push2.bat
+*.bundle

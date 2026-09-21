@@ -1,0 +1,164 @@
+import { useMemo } from 'preact/hooks';
+import type { CBView } from '@shared/cb/view';
+import type { Pos, ResolveStep, Side } from '@shared/cb/types';
+import { Board, CardTile, Hud } from './parts';
+import { cardLabel, cardMap } from './util';
+
+/**
+ * ② 전투 화면 (기준서 1-2 ②). 패가 사라지고 보드가 커진다.
+ *
+ * 손패는 통째로 사라지고 고른 3장만 작게 남는다.
+ * 슬롯 1 → 2 → 3 순서로 한 장씩 열리고, 열릴 때마다 그 카드의 결과가 보드에서 재생된다.
+ * 상대 카드도 같은 타이밍에 같이 열린다.
+ * HP / 기력, 턴 수 영역은 ① 과 같은 자리를 지킨다 — 가운데 칸만 "공개 중"으로 바뀐다.
+ */
+export function PhaseBattle({ v }: { v: CBView }) {
+  const cards = useMemo(() => cardMap(v), [v.cards]);
+  const mySide: Side = v.me?.side ?? 'p1';
+  const foeSide: Side = mySide === 'p1' ? 'p2' : 'p1';
+  const last = v.revealed[v.revealed.length - 1];
+  const openIdx = last ? last.slot : -1;
+
+  // 지금 열린 슬롯의 공격이 닿은 칸을 보드에 표시한다
+  const highlight: Pos[] = useMemo(() => {
+    if (!last) return [];
+    const atk = last.steps.find((s): s is Extract<ResolveStep, { kind: 'attack' }> => s.kind === 'attack');
+    return atk ? [...atk.cells] : [];
+  }, [last]);
+
+  const caption = useMemo(() => {
+    if (!last) return null;
+    const atk = last.steps.find((s): s is Extract<ResolveStep, { kind: 'attack' }> => s.kind === 'attack');
+    if (!atk) return null;
+    const info = cards.get(atk.cardId);
+    return { id: atk.cardId, hit: atk.hit, dealt: atk.dealt, raw: atk.raw, reduced: atk.reduced, info };
+  }, [last, cards]);
+
+  return (
+    <div class="cb-game cb-phase-battle">
+      <Hud
+        v={v}
+        center={
+          <div class="cb-center-big">
+            <div class="cb-center-l">공개 중</div>
+            <b>{openIdx + 1}<span class="cb-center-of"> / 3</span></b>
+            <div class="cb-pips">
+              {[0, 1, 2].map((i) => <span key={i} class={i < openIdx ? 'done' : i === openIdx ? 'on' : ''} />)}
+            </div>
+          </div>
+        }
+      />
+
+      <div class="cb-battle-mid">
+        <section class="cb-panel cb-boardwrap big">
+          <header class="cb-panel-h">
+            <span>보드 4 × 3</span>
+            <span class="cb-dim">손패는 사라졌다 — 고른 3장만 아래에 남는다</span>
+          </header>
+          <Board v={v} highlight={highlight} big />
+          {caption && (
+            <div class={`cb-caption ${caption.hit ? 'hit' : 'miss'}`}>
+              <b>{cardLabel(caption.id)}</b>
+              <span class="cb-dim">이름 미정</span>
+              <i />
+              {caption.info && <span>{caption.info.damage} 피해 · 기력 {caption.info.energyCost}</span>}
+              <i />
+              <span class="cb-verdict">
+                {caption.hit
+                  ? caption.reduced
+                    ? `명중 ${caption.raw} − ${caption.reduced} = ${caption.dealt}`
+                    : `명중 ${caption.dealt}`
+                  : '빗나감'}
+              </span>
+            </div>
+          )}
+        </section>
+
+        <section class="cb-panel cb-log">
+          <header class="cb-panel-h">
+            <span>이번 턴</span>
+            <span class="cb-dim">턴 {v.turn}</span>
+          </header>
+          <div class="cb-log-list">
+            {v.revealed.map((slot) => (
+              <div key={slot.slot} class={`cb-log-slot ${slot.slot === openIdx ? 'on' : ''}`}>
+                <div class="cb-log-h">슬롯 {slot.slot + 1}{slot.slot === openIdx ? ' · 공개 중' : ' · 끝남'}</div>
+                <ul>
+                  {slot.steps.map((s, i) => <li key={i} class={s.kind}>{describe(s, mySide)}</li>)}
+                </ul>
+              </div>
+            ))}
+            {v.revealed.length < 3 && !v.result && (
+              <div class="cb-log-slot pending"><div class="cb-log-h">슬롯 {v.revealed.length + 1} · 아직 안 열림</div></div>
+            )}
+          </div>
+          <footer class="cb-dim">슬롯이 끝나면 방어는 풀린다. 3장을 다 열면 다음 턴으로 넘어간다.</footer>
+        </section>
+      </div>
+
+      <div class="cb-battle-foot">
+        <PickedRow v={v} side={mySide} title="내가 고른 3장" mine />
+        <PickedRow v={v} side={foeSide} title="상대가 고른 3장" />
+      </div>
+    </div>
+  );
+}
+
+function PickedRow({ v, side, title, mine }: { v: CBView; side: Side; title: string; mine?: boolean }) {
+  const cards = cardMap(v);
+  const openIdx = v.revealed.length - 1;
+  return (
+    <section class={`cb-panel cb-picked ${mine ? 'me' : 'foe'}`}>
+      <header class="cb-panel-h">
+        <span class="cb-chip" />
+        <span>{title}</span>
+        <span class="cb-dim">{(side === 'p1' ? v.p1 : v.p2).characterId?.toUpperCase() ?? ''}</span>
+      </header>
+      <div class="cb-picked-row">
+        {[0, 1, 2].map((i) => {
+          const slot = v.revealed[i];
+          const id = slot?.cards[side];
+          const info = id ? cards.get(id) : undefined;
+          return (
+            <div key={i} class="cb-picked-one">
+              {info ? (
+                <>
+                  <CardTile info={info} small dim={i < openIdx} />
+                  <b>{cardLabel(id!)}</b>
+                </>
+              ) : (
+                <>
+                  <div class="cb-tile back small"><span>{i + 1}</span></div>
+                  <b class="cb-dim">뒷면</b>
+                </>
+              )}
+              <span class="cb-dim">{i < openIdx ? `${i + 1} · 열림` : i === openIdx ? `${i + 1} · 열리는 중` : `${i + 1} · 아직`}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function describe(s: ResolveStep, mySide: Side): string {
+  const who = s.side === mySide ? '나' : '상대';
+  switch (s.kind) {
+    case 'move':
+      return `${who} ${cardLabel(s.cardId)} → (${s.to.row},${s.to.col})${s.blocked ? ' · 막혀서 제자리' : ''}`;
+    case 'guard':
+      return `${who} ${cardLabel(s.cardId)} — 이 슬롯 안에서만`;
+    case 'energy':
+      return `${who} 기력 +${s.gained}`;
+    case 'heal':
+      return `${who} 체력 +${s.healed} (기력 ${s.enCost})`;
+    case 'attack':
+      return s.hit
+        ? `${who} ${cardLabel(s.cardId)} 명중 — ${s.raw}${s.reduced ? ` − ${s.reduced}` : ''} = ${s.dealt}`
+        : `${who} ${cardLabel(s.cardId)} 빗나감 (기력 ${s.enCost}은 나감)`;
+    case 'skip':
+      return `${who} ${cardLabel(s.cardId)} 불발 — 기력 부족`;
+    default:
+      return '';
+  }
+}
