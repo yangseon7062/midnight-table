@@ -27,7 +27,8 @@ function Result({ v }: { v: CBView }) {
   if (!v.result) return null;
   const mine = v.me?.side;
   const { winner, reason } = v.result;
-  const head = winner === 'draw' ? '무승부' : mine ? (winner === mine ? '승리' : '패배') : `${winner.toUpperCase()} 승리`;
+  const winnerName = (winner === 'p1' ? v.p1.charName : winner === 'p2' ? v.p2.charName : null) ?? winner.toUpperCase();
+  const head = winner === 'draw' ? '무승부' : mine ? (winner === mine ? '승리' : '패배') : `${winnerName} 승리`;
   const why =
     reason === 'hp' ? '체력 소진'
     : reason === 'turnLimit' ? `${v.turnLimit}턴 종료 — 체력 비율 판정`
@@ -42,8 +43,8 @@ function Result({ v }: { v: CBView }) {
         <div class="cb-dim">{why}</div>
         {reason === 'turnLimit' && (
           <div class="cb-result-ratio">
-            <span>{v.p1.characterId?.toUpperCase()} {v.p1.hp}/{v.p1.maxHp} ({ratio(v.p1)}%)</span>
-            <span>{v.p2.characterId?.toUpperCase()} {v.p2.hp}/{v.p2.maxHp} ({ratio(v.p2)}%)</span>
+            <span>{v.p1.charName ?? '1P'} {v.p1.hp}/{v.p1.maxHp} ({ratio(v.p1)}%)</span>
+            <span>{v.p2.charName ?? '2P'} {v.p2.hp}/{v.p2.maxHp} ({ratio(v.p2)}%)</span>
           </div>
         )}
         <div class="cb-dim">곧 방으로 돌아갑니다</div>
