@@ -128,7 +128,9 @@
 .cb-cell.p1 { border-color: var(--cb-p1); border-style: solid; border-width: 2px; }
 .cb-cell.p2 { border-color: var(--cb-p2); border-style: solid; border-width: 2px; }
 .cb-cell.p1.p2 { border-color: var(--cb-en); }
-.cb-token { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 12px; font-weight: 700; letter-spacing: -0.02em; color: var(--cb-bg); background: var(--cb-p1); border: 2px solid #12100e; }
+/* 말 — 진영색 원에서 무기 문장을 파낸다 (marks.tsx). 글자가 아니라 형태로 구별한다 */
+.cb-token { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 13px; font-weight: 700; color: var(--cb-bg); background: var(--cb-p1); border: 2px solid #12100e; }
+.cb-token .cb-mark { display: block; }
 .cb-token.p2 { background: var(--cb-p2); }
 .cb-token.mine { box-shadow: 0 0 0 2px var(--cb-en); }
 .cb-token.big { width: 46px; height: 46px; font-size: 18px; }
@@ -175,9 +177,10 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-char:disabled { cursor: default; opacity: 0.55; }
 .cb-char-id { font-family: var(--cb-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--cb-dim); border: 1px solid var(--cb-line2); padding: 1px 4px; line-height: 1.3; }
 .cb-char.on .cb-char-id { color: var(--cb-p1-hi); border-color: var(--cb-p1); }
-/* 인장 자리 — 그림이 들어올 자리다. 지금은 이름 첫 글자를 찍어 둔다 */
-.cb-char-mark { flex-grow: 1; align-self: center; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px dashed #5a524a; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 24px; line-height: 1; color: #5a524a; }
+/* 인장 — 그 캐릭터의 무기 문장 (marks.tsx) */
+.cb-char-mark { flex-grow: 1; align-self: center; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px dashed #5a524a; color: #8f857a; }
 .cb-char.on .cb-char-mark { border-color: var(--cb-p1); color: var(--cb-p1-hi); }
+.cb-char:hover:not(:disabled) .cb-char-mark { color: var(--cb-mid); }
 .cb-char-name { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 17px; color: var(--cb-ivory); line-height: 1.2; }
 .cb-char.on .cb-char-name { color: var(--cb-p1-hi); }
 .cb-char-alias { font-size: 11px; color: var(--cb-mid); }
@@ -185,6 +188,8 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-char-stat { font-family: var(--cb-mono); font-size: 10.5px; color: var(--cb-dim); }
 .cb-char-detail { width: 380px; flex-shrink: 0; }
 .cb-detail-h { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--cb-line); }
+.cb-detail-who { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.cb-detail-mark { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid var(--cb-line2); background: #16130f; color: var(--cb-p1-hi); flex-shrink: 0; }
 .cb-detail-id { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 30px; font-weight: 700; line-height: 1.1; }
 .cb-detail-alias { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 14px; color: var(--cb-mid); margin: 0 6px 0 4px; }
 .cb-detail-intro { margin: 10px 0 0; font-size: 12px; line-height: 1.7; color: var(--cb-mid); }

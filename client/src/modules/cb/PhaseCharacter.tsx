@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import type { CBView } from '@shared/cb/view';
 import { CardArt, RangeMini } from './CardArt';
 import { Hud } from './parts';
+import { CharMark } from './marks';
 import { act, secondsLeft, slotCode, useNow } from './util';
 
 /**
@@ -51,7 +52,7 @@ export function PhaseCharacter({ v }: { v: CBView }) {
                 onClick={() => setSel(c.id)}
               >
                 <b class="cb-char-id">{c.label}</b>
-                <span class="cb-char-mark" aria-hidden="true">{c.name.slice(0, 1)}</span>
+                <span class="cb-char-mark" aria-hidden="true"><CharMark characterId={c.id} size={28} /></span>
                 <span class="cb-char-name">{c.name}</span>
                 <span class="cb-char-alias">「{c.alias}」</span>
                 <span class="cb-char-note">{c.note}</span>
@@ -66,11 +67,14 @@ export function PhaseCharacter({ v }: { v: CBView }) {
           {detail ? (
             <>
               <header class="cb-detail-h">
-                <div>
+                <div class="cb-detail-who">
+                  <span class="cb-detail-mark" aria-hidden="true"><CharMark characterId={detail.id} size={44} /></span>
+                  <div>
                   <b class="cb-detail-id">{detail.name}</b>
                   <span class="cb-detail-alias">「{detail.alias}」</span>
                   <span class="cb-slotcode">{detail.label}</span>
                   <div class="cb-dim">{detail.weapon} · {detail.note}</div>
+                  </div>
                 </div>
                 <div class="cb-detail-stat">
                   <div class="hp">HP {detail.maxHp}</div>

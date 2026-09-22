@@ -1,4 +1,5 @@
 import type { CBCardInfo } from '@shared/cb/view';
+import { CardMark, ownerOf } from './marks';
 
 /**
  * 카드 면 그림 (기준서 1-1: 카드에는 **그림만**).
@@ -52,8 +53,14 @@ export function CardArt({ info, size = 44 }: { info: CBCardInfo | undefined; siz
     );
   }
 
-  // 기술 — 사거리 패턴을 바탕으로 깔고 그 위에 일격을 긋는다
+  // 기술 — 사거리 격자를 바탕으로 깔고 그 위에 **그 캐릭터의 무기 문장**을 얹는다.
+  //
+  // 예전에는 여기에 일반적인 사선 하나를 그었는데, 그러면 한 캐릭터의 네 장이 전부
+  // 똑같이 생기고 다른 캐릭터의 카드와도 구별이 안 됐다. 문장을 쓰면 사거리(뒤)와
+  // 주인(앞)이 한 장에 같이 읽힌다. 카드 면에 이름을 안 적는다는 규칙(기준서 1-1)을
+  // 지키면서 "누구의 무엇인가"를 그림만으로 말하는 방법이다.
   const p = info.range;
+  const owner = ownerOf(info.id);
   return (
     <svg viewBox="0 0 40 40" style={s} role="img" aria-label="기술">
       {p?.map((row, r) =>
@@ -61,8 +68,15 @@ export function CardArt({ info, size = 44 }: { info: CBCardInfo | undefined; siz
           on ? <rect key={`${r}-${c}`} x={4 + c * 11} y={4 + r * 11} width="10" height="10" fill="var(--cb-atk-dim)" /> : null,
         ),
       )}
-      <path d="M5 32 Q20 22 35 7" stroke="var(--cb-atk-hi)" stroke-width="5" fill="none" stroke-linecap="round" />
-      <path d="M7 35 Q22 26 37 11" stroke="var(--cb-atk)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8" />
+      {owner ? (
+        <CardMark characterId={owner} />
+      ) : (
+        // 주인을 모르는 공격 카드 — 지금 데이터에는 없지만, 생기면 예전 사선으로 떨어진다
+        <>
+          <path d="M5 32 Q20 22 35 7" stroke="var(--cb-atk-hi)" stroke-width="5" fill="none" stroke-linecap="round" />
+          <path d="M7 35 Q22 26 37 11" stroke="var(--cb-atk)" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8" />
+        </>
+      )}
     </svg>
   );
 }

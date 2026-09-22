@@ -3,6 +3,7 @@ import type { CBCardInfo, CBPublicPlayer, CBView } from '@shared/cb/view';
 import type { Pos } from '@shared/cb/types';
 import { BOARD_COLS, BOARD_ROWS } from '@shared/cb/types';
 import { CardArt } from './CardArt';
+import { CharMark, weaponOf } from './marks';
 import { samePos } from './util';
 
 /* ─────────────────────────────────────────────────────────────
@@ -113,16 +114,27 @@ export function Board({ v, highlight, big }: { v: CBView; highlight?: readonly P
 }
 
 /**
- * 말. 진영색 원형 토큰에 캐릭터 이름을 넣는다 — 여덟 이름이 전부 두 글자라 작은 칸에서도 읽히고,
- * 서로 구별된다. 그림 말은 나중에 이 자리만 갈아끼우면 된다.
+ * 말. 진영색 원형에 그 캐릭터의 **무기 문장**을 파낸다 (marks.tsx).
+ *
+ * 30px 원 안에서 여덟이 갈려야 하는데, 그 크기에서는 디테일이 아니라 덩어리 모양으로
+ * 구별된다. 그래서 얼굴도 이름 글자도 아니라 무기다 — 문장 자체가 실루엣이다.
+ * 이름은 `title` 로만 남긴다(마우스를 올리면 뜬다). 화면 곳곳에 이미 이름이 있다.
  */
 function Marker({ side, v, big }: { side: 'p1' | 'p2'; v: CBView; big?: boolean }) {
   const p = side === 'p1' ? v.p1 : v.p2;
   const me = v.me?.side === side;
-  const title = `${p.charName ?? '???'} · ${me ? '나' : '상대'}`;
+  const who = me ? '나' : '상대';
+  const name = p.charName ?? '???';
+  const weapon = weaponOf(p.characterId);
   return (
-    <span class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''}`} title={title}>
-      {p.charName ?? '?'}
+    <span
+      class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''}`}
+      title={weapon ? `${name} · ${weapon} · ${who}` : `${name} · ${who}`}
+      aria-label={`${name} (${who})`}
+      role="img"
+    >
+      {/* 캐릭터가 아직 공개 전이면 문장도 없다 — 물음표로 자리만 잡는다 */}
+      {p.characterId ? <CharMark characterId={p.characterId} size={big ? 28 : 18} /> : '?'}
     </span>
   );
 }

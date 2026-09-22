@@ -67,6 +67,8 @@ await A.page.click('.cb-char:has-text("C1")');
 await sleep(250);
 const skillRows = await A.page.$$eval('.cb-skill', (n) => n.length);
 check(skillRows === 4, '고른 캐릭터의 기술 4장이 옆에 뜸');
+const seals = await A.page.$$eval('.cb-char-mark svg.cb-mark', (n) => n.length);
+check(seals === 8, `여덟 명 전부 인장(무기 문장)을 갖고 있음 (${seals}/8)`);
 const c1Name = await A.page.$eval('.cb-detail-id', (n) => n.textContent.trim());
 check(c1Name === '하진', `상세 패널에 캐릭터 이름이 뜸 (${c1Name})`);
 const skillNames = await A.page.$$eval('.cb-skill-name b', (n) => n.map((e) => e.textContent.trim()));
@@ -89,8 +91,14 @@ check(/턴\s*1\s*\/\s*20/.test(turnText), `① 에 턴 수가 n / 20 으로 보�
 const myName = await A.page.$eval('.cb-player.me .cb-name', (n) => n.textContent.trim());
 const foeName = await A.page.$eval('.cb-player.foe .cb-name', (n) => n.textContent.trim());
 check(myName === '하진' && foeName === '채령', `공개 뒤 양쪽 이름이 상단에 뜸 (${myName} / ${foeName})`);
-const tokens = await A.page.$$eval('.cb-token', (n) => n.map((e) => e.textContent.trim()));
-check(tokens.includes('하진') && tokens.includes('채령'), `보드 말에 이름이 들어감 (${tokens.join(' / ')})`);
+// 말은 이제 글자가 아니라 무기 문장을 그린다. 이름은 aria-label 로만 남는다.
+const tokens = await A.page.$$eval('.cb-token', (n) => n.map((e) => e.getAttribute('aria-label') ?? ''));
+check(
+  tokens.some((t) => t.startsWith('하진')) && tokens.some((t) => t.startsWith('채령')),
+  `보드 말이 누구인지 읽힘 (${tokens.join(' / ')})`,
+);
+const tokenMarks = await A.page.$$eval('.cb-token svg.cb-mark', (n) => n.length);
+check(tokenMarks === 2, `말 두 개 다 문장이 그려짐 (${tokenMarks}개)`);
 const handCount = await A.page.$$eval('.cb-row-tiles .cb-tile', (n) => n.length);
 check(handCount === 14, '손패 14장');
 const rowCount = await A.page.$$eval('.cb-row', (n) => n.length);
