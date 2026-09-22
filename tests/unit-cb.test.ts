@@ -100,6 +100,36 @@ section('데이터 (기준서 9번 표)');
   check(CHARACTERS.every((c) => handIdsFor(c.id).length === 14), '캐릭터마다 손패 14장 (이동 6 + 방어·보조 4 + 기술 4)');
   check(Object.values(RANGES).every(isLeftRightSymmetric), '범위 10종 전부 좌우 대칭 (기준서 8번)');
   check(BOARD_ROWS === 3 && BOARD_COLS === 4, '보드는 4열 × 3행');
+
+  // 이름은 수치와 **따로** 검사한다. 이름을 고치다 숫자를 건드리면 위의 표 검사가 먼저 터지고,
+  // 숫자를 고치다 이름이 빠지면 여기가 터진다. 기준서 9번 표는 이 둘을 같이 봐야 재현된다.
+  const EXPECT_NAMES: readonly (readonly [string, string, string])[] = [
+    ['c1', '하진', '물길'], ['c2', '소윤', '종잇장'], ['c3', '석우', '문지기'], ['c4', '탁오', '덫'],
+    ['c5', '채령', '풍경'], ['c6', '여울', '잔발'], ['c7', '한서', '한 자루'], ['c8', '무진', '종지기'],
+  ];
+  check(
+    EXPECT_NAMES.every(([id, name, alias]) => {
+      const c = getCharacter(id);
+      return c.name === name && c.alias === alias && c.weapon.length > 0 && c.intro.length > 0;
+    }),
+    '캐릭터 8명의 이름 · 이명 · 무기 · 소개가 다 있다',
+  );
+
+  const EXPECT_SKILL_NAMES: readonly (readonly [string, string])[] = [
+    ['c1_a', '한 획'], ['c1_b', '내려 긋기'], ['c1_c', '열십자'], ['c1_d', '엇결'],
+    ['c2_a', '네 모서리'], ['c2_b', '사방 결계'], ['c2_c', '먹물 쏟기'], ['c2_d', '십자 봉인'],
+    ['c3_a', '빗장 지르기'], ['c3_b', '곧은 창'], ['c3_c', '네 번 찌르기'], ['c3_d', '방패 돌리기'],
+    ['c4_a', '낚아채기'], ['c4_b', '발목 걸기'], ['c4_c', '사슬 후리기'], ['c4_d', '그물 조이기'],
+    ['c5_a', '높은 바람'], ['c5_b', '겹울림'], ['c5_c', '스치기'], ['c5_d', '네 갈래 바람'],
+    ['c6_a', '스쳐 베기'], ['c6_b', '교차 베기'], ['c6_c', '찔러 올리기'], ['c6_d', '낮게 쓸기'],
+    ['c7_a', '치켜올림'], ['c7_b', '비껴 찌르기'], ['c7_c', '한 줄 꿰기'], ['c7_d', '가로 쓸기'],
+    ['c8_a', '내려찍기'], ['c8_b', '땅 울리기'], ['c8_c', '올려치기'], ['c8_d', '휩쓸기'],
+  ];
+  check(EXPECT_SKILL_NAMES.every(([id, name]) => getCard(id).name === name), '기술 32장의 이름이 표와 일치');
+  check(
+    CHARACTERS.every((c) => new Set(handIdsFor(c.id).map((id) => getCard(id).name)).size === 14),
+    '한 캐릭터의 손패 14장 안에서 이름이 겹치지 않는다',
+  );
 }
 
 /* ═══════════════════════════ 캐릭터 선택 ═══════════════════════════ */

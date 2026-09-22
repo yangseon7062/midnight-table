@@ -27,19 +27,20 @@ export function secondsLeft(deadline: number, now: number): number | null {
 
 /**
  * 카드 이름. 기준서 1-1 대로 **카드 면에는 적지 않고** 말풍선과 캡션에만 쓴다.
- * 기술은 이름이 아직 없으므로 슬롯 표기를 그대로 보여준다 (c1_b → C1-b).
+ * 이름은 서버가 뷰에 실어 보낸다 — 수치 표와 이름이 한 곳(data/)에만 있게 하려는 것이다.
  */
-const COMMON_LABELS: Record<string, string> = {
-  move_up: '위로', move_down: '아래로',
-  move_left: '왼쪽', move_right: '오른쪽',
-  move_left2: '왼쪽 두 칸', move_right2: '오른쪽 두 칸',
-  guard: 'Guard', perfect_guard: 'Perfect Guard', energy_up: 'Energy Up', heal: 'Heal',
-};
-
-export function cardLabel(id: string): string {
-  if (COMMON_LABELS[id]) return COMMON_LABELS[id];
+export function cardLabel(id: string, cards?: Map<string, CBCardInfo>): string {
+  const name = cards?.get(id)?.name;
+  if (name) return name;
+  // 뷰에 아직 안 실린 카드 — 슬롯 표기로 떨어뜨린다
   const m = /^c(\d)_([a-d])$/.exec(id);
   return m ? `C${m[1]}-${m[2]}` : id;
+}
+
+/** 기술의 슬롯 표기 — 이름 옆에 작게 붙여 기준서 9번 표와 대조할 수 있게 한다 */
+export function slotCode(id: string): string | null {
+  const m = /^c(\d)_([a-d])$/.exec(id);
+  return m ? `C${m[1]}-${m[2]}` : null;
 }
 
 export function cardKindLabel(info: CBCardInfo | undefined): string {

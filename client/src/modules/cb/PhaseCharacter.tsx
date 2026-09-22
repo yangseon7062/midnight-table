@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import type { CBView } from '@shared/cb/view';
 import { CardArt, RangeMini } from './CardArt';
 import { Hud } from './parts';
-import { act, cardLabel, secondsLeft, useNow } from './util';
+import { act, secondsLeft, slotCode, useNow } from './util';
 
 /**
  * ⓪ 캐릭터 선택 화면 (기준서 1-2 ⓪).
@@ -51,13 +51,15 @@ export function PhaseCharacter({ v }: { v: CBView }) {
                 onClick={() => setSel(c.id)}
               >
                 <b class="cb-char-id">{c.label}</b>
-                <span class="cb-char-mark" aria-hidden="true">{c.label}</span>
+                <span class="cb-char-mark" aria-hidden="true">{c.name.slice(0, 1)}</span>
+                <span class="cb-char-name">{c.name}</span>
+                <span class="cb-char-alias">「{c.alias}」</span>
                 <span class="cb-char-note">{c.note}</span>
                 <span class="cb-char-stat">HP {c.maxHp} · 기력 {c.maxEn}</span>
               </button>
             ))}
           </div>
-          <footer class="cb-dim">이름·생김새·기술 이름은 아직 없다. 슬롯 번호와 수치만 확정.</footer>
+          <footer class="cb-dim">여덟은 같은 패를 찬다. 실력을 가리는 자리에서는 서로를 벤다.</footer>
         </section>
 
         <section class="cb-panel cb-char-detail">
@@ -65,22 +67,25 @@ export function PhaseCharacter({ v }: { v: CBView }) {
             <>
               <header class="cb-detail-h">
                 <div>
-                  <b class="cb-detail-id">{detail.label}</b>
-                  <div class="cb-dim">{detail.note}</div>
+                  <b class="cb-detail-id">{detail.name}</b>
+                  <span class="cb-detail-alias">「{detail.alias}」</span>
+                  <span class="cb-slotcode">{detail.label}</span>
+                  <div class="cb-dim">{detail.weapon} · {detail.note}</div>
                 </div>
                 <div class="cb-detail-stat">
                   <div class="hp">HP {detail.maxHp}</div>
                   <div class="en">기력 {detail.maxEn}</div>
                 </div>
               </header>
+              <p class="cb-detail-intro">{detail.intro}</p>
               <div class="cb-panel-h">기술 네 장</div>
               <div class="cb-skills">
                 {detail.skills.map((s) => (
                   <div key={s.id} class="cb-skill">
                     {s.range && <RangeMini pattern={s.range} />}
                     <div class="cb-skill-name">
-                      <b>{cardLabel(s.id)}</b>
-                      <span class="cb-dim">이름 미정</span>
+                      <b>{s.name}</b>
+                      <span class="cb-slotcode">{slotCode(s.id)}</span>
                     </div>
                     <div class="cb-skill-num">
                       <div class="dm">{s.damage}</div>
@@ -124,7 +129,7 @@ export function PhaseCharacter({ v }: { v: CBView }) {
                 disabled={!picked}
                 onClick={() => picked && act('chooseChar', { characterId: picked })}
               >
-                {picked ? `${detail?.label ?? ''} 으로 확정` : '캐릭터를 고르세요'}
+                {picked ? `${detail?.name ?? ''} 으로 확정` : '캐릭터를 고르세요'}
               </button>
             )}
             <div class="cb-dim center">확정하면 못 바꾼다. 둘 다 확정되면 동시에 공개된다.</div>

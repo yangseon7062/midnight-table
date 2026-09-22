@@ -77,6 +77,8 @@
 .cb-chip { width: 4px; height: 13px; background: var(--cb-p1); flex-shrink: 0; }
 .cb-player.p2 .cb-chip, .cb-picked.foe .cb-chip { background: var(--cb-p2); }
 .cb-name { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 17px; }
+/* 슬롯 표기 배지 — 이름 옆에 작게. 기준서 9번 표와 화면을 눈으로 대조할 때 쓴다 */
+.cb-slotcode { font-family: var(--cb-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--cb-dim); border: 1px solid var(--cb-line2); padding: 1px 4px; line-height: 1.3; white-space: nowrap; }
 .cb-role { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--cb-p1-hi); }
 .cb-player.p2 .cb-role { color: var(--cb-p2-hi); }
 .cb-bar-row { display: flex; align-items: center; gap: 8px; }
@@ -126,13 +128,13 @@
 .cb-cell.p1 { border-color: var(--cb-p1); border-style: solid; border-width: 2px; }
 .cb-cell.p2 { border-color: var(--cb-p2); border-style: solid; border-width: 2px; }
 .cb-cell.p1.p2 { border-color: var(--cb-en); }
-.cb-token { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--cb-mono); font-size: 11px; font-weight: 800; color: var(--cb-bg); background: var(--cb-p1); border: 2px solid #12100e; }
+.cb-token { position: relative; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 12px; font-weight: 700; letter-spacing: -0.02em; color: var(--cb-bg); background: var(--cb-p1); border: 2px solid #12100e; }
 .cb-token.p2 { background: var(--cb-p2); }
 .cb-token.mine { box-shadow: 0 0 0 2px var(--cb-en); }
-.cb-token.big { width: 46px; height: 46px; font-size: 15px; }
+.cb-token.big { width: 46px; height: 46px; font-size: 18px; }
 .cb-caption { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 8px 18px; background: #0c0a09; border: 1px solid var(--cb-p1); white-space: nowrap; }
 .cb-caption.miss { border-color: var(--cb-line2); }
-.cb-caption b { font-family: var(--cb-mono); font-size: 18px; font-weight: 600; }
+.cb-caption b { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 19px; font-weight: 600; }
 .cb-caption i { width: 1px; height: 16px; background: var(--cb-line2); }
 .cb-caption .cb-verdict { color: var(--cb-p1-hi); font-weight: 600; font-size: 12px; }
 .cb-caption.miss .cb-verdict { color: var(--cb-dim); }
@@ -167,19 +169,25 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-char-body { flex-grow: 1; display: flex; gap: 12px; min-height: 0; }
 .cb-roster { flex-grow: 1; min-width: 0; }
 .cb-roster-grid { flex-grow: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.cb-char { position: relative; background: #1e1a16; border: 1px solid var(--cb-line); color: inherit; padding: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer; text-align: left; min-height: 120px; }
+.cb-char { position: relative; background: #1e1a16; border: 1px solid var(--cb-line); color: inherit; padding: 10px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; cursor: pointer; text-align: left; min-height: 150px; }
 .cb-char:hover:not(:disabled) { border-color: var(--cb-mid); }
 .cb-char.on { background: #2a1810; border: 2px solid var(--cb-p1); }
 .cb-char:disabled { cursor: default; opacity: 0.55; }
-.cb-char-id { font-family: var(--cb-mono); font-size: 18px; font-weight: 800; color: var(--cb-mid); }
-.cb-char.on .cb-char-id { color: var(--cb-p1-hi); }
-.cb-char-mark { flex-grow: 1; align-self: center; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px dashed #5a524a; font-family: var(--cb-mono); font-size: 13px; color: #5a524a; }
+.cb-char-id { font-family: var(--cb-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--cb-dim); border: 1px solid var(--cb-line2); padding: 1px 4px; line-height: 1.3; }
+.cb-char.on .cb-char-id { color: var(--cb-p1-hi); border-color: var(--cb-p1); }
+/* 인장 자리 — 그림이 들어올 자리다. 지금은 이름 첫 글자를 찍어 둔다 */
+.cb-char-mark { flex-grow: 1; align-self: center; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px dashed #5a524a; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 24px; line-height: 1; color: #5a524a; }
 .cb-char.on .cb-char-mark { border-color: var(--cb-p1); color: var(--cb-p1-hi); }
+.cb-char-name { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 17px; color: var(--cb-ivory); line-height: 1.2; }
+.cb-char.on .cb-char-name { color: var(--cb-p1-hi); }
+.cb-char-alias { font-size: 11px; color: var(--cb-mid); }
 .cb-char-note { font-size: 10.5px; color: var(--cb-mid); }
 .cb-char-stat { font-family: var(--cb-mono); font-size: 10.5px; color: var(--cb-dim); }
 .cb-char-detail { width: 380px; flex-shrink: 0; }
 .cb-detail-h { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--cb-line); }
-.cb-detail-id { font-family: var(--cb-mono); font-size: 32px; font-weight: 800; line-height: 1; }
+.cb-detail-id { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 30px; font-weight: 700; line-height: 1.1; }
+.cb-detail-alias { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 14px; color: var(--cb-mid); margin: 0 6px 0 4px; }
+.cb-detail-intro { margin: 10px 0 0; font-size: 12px; line-height: 1.7; color: var(--cb-mid); }
 .cb-detail-stat { text-align: right; font-family: var(--cb-mono); font-size: 14px; font-weight: 600; }
 .cb-detail-stat .hp { color: var(--cb-p1-hi); }
 .cb-detail-stat .en { color: var(--cb-en-hi); }
@@ -187,8 +195,8 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-skill { display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: #1e1a16; border-left: 2px solid var(--cb-atk); }
 .cb-skill .cb-rangemini { width: 34px; }
 .cb-skill-name { flex-grow: 1; min-width: 0; }
-.cb-skill-name b { font-family: var(--cb-mono); font-size: 13px; }
-.cb-skill-name span { display: block; }
+.cb-skill-name b { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 14px; }
+.cb-skill-name span { display: inline-block; margin-top: 2px; }
 .cb-skill-num { text-align: right; font-family: var(--cb-mono); }
 .cb-skill-num .dm { font-size: 14px; font-weight: 600; color: var(--cb-p1-hi); }
 .cb-skill-num .en { font-size: 11px; color: var(--cb-en-hi); }
@@ -215,7 +223,7 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-arrow { font-family: var(--cb-mono); font-size: 18px; color: #5a524a; padding: 0 6px; }
 .cb-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 120px; }
 .cb-slot-cap { text-align: center; }
-.cb-slot-cap b { display: block; font-family: var(--cb-mono); font-size: 12px; }
+.cb-slot-cap b { display: block; font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 13px; }
 .cb-slot-empty { width: 104px; height: 78px; border: 2px dashed var(--cb-line2); display: grid; place-items: center; }
 .cb-slot-empty span { font-family: var(--cb-mono); font-size: 26px; font-weight: 800; color: var(--cb-line2); }
 .cb-slot-empty em { display: none; }
@@ -237,7 +245,7 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 /* 말풍선은 손 올린 카드를 설명할 뿐이다. 포인터를 가로채면 그 아래 타일이 안 눌린다. */
 .cb-tip { position: absolute; left: 16px; bottom: 100%; margin-bottom: 8px; width: 260px; padding: 11px 13px; background: #0c0a09; border: 1px solid var(--cb-p1); z-index: 5; pointer-events: none; }
 .cb-tip-h { display: flex; align-items: baseline; justify-content: space-between; }
-.cb-tip-h b { font-family: var(--cb-mono); font-size: 15px; }
+.cb-tip-h b { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 16px; }
 .cb-tip-body { margin-top: 6px; font-size: 11px; line-height: 1.6; color: #c6bdb2; }
 .cb-tip-foot { margin-top: 8px; display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--cb-en-hi); }
 
@@ -260,7 +268,7 @@ button.cb-tile:focus-visible { outline: 2px solid var(--cb-en-hi); outline-offse
 .cb-picked-row { display: flex; gap: 14px; }
 .cb-picked.foe .cb-picked-row { justify-content: flex-end; }
 .cb-picked-one { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.cb-picked-one b { font-family: var(--cb-mono); font-size: 11px; }
+.cb-picked-one b { font-family: var(--serif, 'Nanum Myeongjo', serif); font-size: 12px; text-align: center; }
 .cb-picked-one span { font-size: 9.5px; }
 
 /* ── 결과 · 관전 ── */

@@ -2,7 +2,8 @@ import { useMemo } from 'preact/hooks';
 import type { CBView } from '@shared/cb/view';
 import type { Pos, ResolveStep, Side } from '@shared/cb/types';
 import { Board, CardTile, Hud } from './parts';
-import { cardLabel, cardMap } from './util';
+import type { CBCardInfo } from '@shared/cb/view';
+import { cardLabel, cardMap, slotCode } from './util';
 
 /**
  * ② 전투 화면 (기준서 1-2 ②). 패가 사라지고 보드가 커진다.
@@ -58,8 +59,8 @@ export function PhaseBattle({ v }: { v: CBView }) {
           <Board v={v} highlight={highlight} big />
           {caption && (
             <div class={`cb-caption ${caption.hit ? 'hit' : 'miss'}`}>
-              <b>{cardLabel(caption.id)}</b>
-              <span class="cb-dim">이름 미정</span>
+              <b>{cardLabel(caption.id, cards)}</b>
+              <span class="cb-slotcode">{slotCode(caption.id)}</span>
               <i />
               {caption.info && <span>{caption.info.damage} 피해 · 기력 {caption.info.energyCost}</span>}
               <i />
@@ -84,7 +85,7 @@ export function PhaseBattle({ v }: { v: CBView }) {
               <div key={slot.slot} class={`cb-log-slot ${slot.slot === openIdx ? 'on' : ''}`}>
                 <div class="cb-log-h">슬롯 {slot.slot + 1}{slot.slot === openIdx ? ' · 공개 중' : ' · 끝남'}</div>
                 <ul>
-                  {slot.steps.map((s, i) => <li key={i} class={s.kind}>{describe(s, mySide)}</li>)}
+                  {slot.steps.map((s, i) => <li key={i} class={s.kind}>{describe(s, mySide, cards)}</li>)}
                 </ul>
               </div>
             ))}
@@ -112,7 +113,7 @@ function PickedRow({ v, side, title, mine }: { v: CBView; side: Side; title: str
       <header class="cb-panel-h">
         <span class="cb-chip" />
         <span>{title}</span>
-        <span class="cb-dim">{(side === 'p1' ? v.p1 : v.p2).characterId?.toUpperCase() ?? ''}</span>
+        <span class="cb-dim">{(side === 'p1' ? v.p1 : v.p2).charName ?? ''}</span>
       </header>
       <div class="cb-picked-row">
         {[0, 1, 2].map((i) => {
@@ -124,7 +125,7 @@ function PickedRow({ v, side, title, mine }: { v: CBView; side: Side; title: str
               {info ? (
                 <>
                   <CardTile info={info} small dim={i < openIdx} />
-                  <b>{cardLabel(id!)}</b>
+                  <b>{info.name}</b>
                 </>
               ) : (
                 <>
@@ -141,23 +142,24 @@ function PickedRow({ v, side, title, mine }: { v: CBView; side: Side; title: str
   );
 }
 
-function describe(s: ResolveStep, mySide: Side): string {
+function describe(s: ResolveStep, mySide: Side, cards: Map<string, CBCardInfo>): string {
   const who = s.side === mySide ? '나' : '상대';
+  const nm = (id: string) => cardLabel(id, cards);
   switch (s.kind) {
     case 'move':
-      return `${who} ${cardLabel(s.cardId)} → (${s.to.row},${s.to.col})${s.blocked ? ' · 막혀서 제자리' : ''}`;
+      return `${who} ${nm(s.cardId)} → (${s.to.row},${s.to.col})${s.blocked ? ' · 막혀서 제자리' : ''}`;
     case 'guard':
-      return `${who} ${cardLabel(s.cardId)} — 이 슬롯 안에서만`;
+      return `${who} ${nm(s.cardId)} — 이 슬롯 안에서만`;
     case 'energy':
       return `${who} 기력 +${s.gained}`;
     case 'heal':
       return `${who} 체력 +${s.healed} (기력 ${s.enCost})`;
     case 'attack':
       return s.hit
-        ? `${who} ${cardLabel(s.cardId)} 명중 — ${s.raw}${s.reduced ? ` − ${s.reduced}` : ''} = ${s.dealt}`
-        : `${who} ${cardLabel(s.cardId)} 빗나감 (기력 ${s.enCost}은 나감)`;
+        ? `${who} ${nm(s.cardId)} 명중 — ${s.raw}${s.reduced ? ` − ${s.reduced}` : ''} = ${s.dealt}`
+        : `${who} ${nm(s.cardId)} 빗나감 (기력 ${s.enCost}은 나감)`;
     case 'skip':
-      return `${who} ${cardLabel(s.cardId)} 불발 — 기력 부족`;
+      return `${who} ${nm(s.cardId)} 불발 — 기력 부족`;
     default:
       return '';
   }

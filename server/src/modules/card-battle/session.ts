@@ -202,7 +202,7 @@ export class CardBattleSession implements GameSession {
   private startReveal(): void {
     revealCharacters(this.st);
     this.stepAt = this.host.now() + CHAR_REVEAL_MS;
-    const label = (s: Side) => getCharacter(playerOf(this.st, s).characterId!).label;
+    const label = (s: Side) => getCharacter(playerOf(this.st, s).characterId!).name;
     this.host.systemMessage(`캐릭터 공개 — ${label('p1')} 대 ${label('p2')}`);
   }
 
@@ -341,6 +341,8 @@ export class CardBattleSession implements GameSession {
       connected: info ? info.connected : true,
       absent: info ? info.absent : false,
       characterId: shown ? p.characterId : null,
+      charName: shown && p.characterId ? getCharacter(p.characterId).name : null,
+      charLabel: shown && p.characterId ? getCharacter(p.characterId).label : null,
       charLocked: p.charLocked,
       charAuto: shown ? p.charAuto : false,
       hp: p.hp,
@@ -390,6 +392,10 @@ export class CardBattleSession implements GameSession {
     return CHARACTERS.map((c) => ({
       id: c.id,
       label: c.label,
+      name: c.name,
+      alias: c.alias,
+      weapon: c.weapon,
+      intro: c.intro,
       maxHp: c.maxHp,
       maxEn: c.maxEn,
       note: c.note,
@@ -437,5 +443,5 @@ export class CardBattleSession implements GameSession {
 
 function cardInfo(id: string): CBCardInfo {
   const c = getCard(id);
-  return { id, type: c.type, energyCost: c.energyCost, damage: c.damage, range: c.rangePattern, move: c.move };
+  return { id, name: c.name, type: c.type, energyCost: c.energyCost, damage: c.damage, range: c.rangePattern, move: c.move };
 }

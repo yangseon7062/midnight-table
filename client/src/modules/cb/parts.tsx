@@ -3,7 +3,7 @@ import type { CBCardInfo, CBPublicPlayer, CBView } from '@shared/cb/view';
 import type { Pos } from '@shared/cb/types';
 import { BOARD_COLS, BOARD_ROWS } from '@shared/cb/types';
 import { CardArt } from './CardArt';
-import { cardLabel, samePos } from './util';
+import { samePos } from './util';
 
 /* ─────────────────────────────────────────────────────────────
    상단 바 — 기준서 1-2: HP / 기력, 턴 수, 남은 시간 영역은
@@ -57,7 +57,8 @@ function PlayerPanel({ p, side, v, pendingEn }: { p: CBPublicPlayer; side: 'me' 
     <div class={`cb-player ${side} ${p.side}`}>
       <div class="cb-player-top">
         <span class="cb-chip" />
-        <b class="cb-name">{p.characterId ? p.characterId.toUpperCase() : '???'}</b>
+        <b class="cb-name">{p.charName ?? '???'}</b>
+        {p.charLabel && <span class="cb-slotcode">{p.charLabel}</span>}
         <span class="cb-role">{who} · {tag}</span>
         {!p.connected && <span class="cb-warn">연결 끊김</span>}
         {side === 'foe' && v.phase === 'charSelect' && p.charLocked && <span class="cb-ok">선택 완료</span>}
@@ -112,15 +113,16 @@ export function Board({ v, highlight, big }: { v: CBView; highlight?: readonly P
 }
 
 /**
- * 말. 캐릭터 디자인이 정해지기 전까지 쓰는 자리표시다 —
- * 진영색 원형 토큰에 슬롯 표기를 넣는다. 작은 칸에서도 읽히고 8명이 서로 구별된다.
+ * 말. 진영색 원형 토큰에 캐릭터 이름을 넣는다 — 여덟 이름이 전부 두 글자라 작은 칸에서도 읽히고,
+ * 서로 구별된다. 그림 말은 나중에 이 자리만 갈아끼우면 된다.
  */
 function Marker({ side, v, big }: { side: 'p1' | 'p2'; v: CBView; big?: boolean }) {
   const p = side === 'p1' ? v.p1 : v.p2;
   const me = v.me?.side === side;
+  const title = `${p.charName ?? '???'} · ${me ? '나' : '상대'}`;
   return (
-    <span class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''}`} title={me ? '나' : '상대'}>
-      {p.characterId ? p.characterId.toUpperCase() : '?'}
+    <span class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''}`} title={title}>
+      {p.charName ?? '?'}
     </span>
   );
 }
@@ -164,7 +166,7 @@ export function CardTile(props: {
       class={cls}
       type="button"
       disabled={locked}
-      aria-label={cardLabel(info.id)}
+      aria-label={info.name}
       onClick={props.onClick}
       onMouseEnter={props.onEnter}
       onMouseLeave={props.onLeave}

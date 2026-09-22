@@ -9,6 +9,8 @@ import type { BattleResult, CardType, CBPhase, MoveSpec, Pos, RangePattern, Side
  */
 export interface CBCardInfo {
   id: string;
+  /** 화면에 보여줄 이름 */
+  name: string;
   type: CardType;
   energyCost: number;
   /** 공격만 */
@@ -39,6 +41,10 @@ export interface CBPublicPlayer {
   absent: boolean;
   /** 아직 공개 전이면 null */
   characterId: string | null;
+  /** 캐릭터 이름 — 공개 전이면 null. 명단(roster)은 ⓪ 에만 실리므로 여기에 같이 보낸다 */
+  charName: string | null;
+  /** 슬롯 표기 'C1' — 기준서 9번 표와 대조할 때 쓴다. 공개 전이면 null */
+  charLabel: string | null;
   charLocked: boolean;
   /** 서버가 랜덤 배정했는가 (공개 후에만 의미 있음) */
   charAuto: boolean;
@@ -64,7 +70,12 @@ export interface CBMeView {
 /** ⓪ 캐릭터 선택 화면이 8명을 늘어놓는 데 필요한 정보. 전부 공개 정보다. */
 export interface CBCharacterInfo {
   id: string;
+  /** 슬롯 표기 'C1' — 기준서 9번 표와 대조할 때 쓴다 */
   label: string;
+  name: string;
+  alias: string;
+  weapon: string;
+  intro: string;
   maxHp: number;
   maxEn: number;
   note: string;

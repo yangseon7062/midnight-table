@@ -3,7 +3,7 @@ import type { CBCardInfo, CBView } from '@shared/cb/view';
 import type { Pos } from '@shared/cb/types';
 import { RangeMini } from './CardArt';
 import { Board, CardTile, Hud } from './parts';
-import { act, cardEffect, cardLabel, cardMap, energyAfter, rangeCells, secondsLeft, sortHand, useNow } from './util';
+import { act, cardEffect, cardLabel, cardMap, energyAfter, rangeCells, secondsLeft, slotCode, sortHand, useNow } from './util';
 
 /**
  * ① 카드 선택 화면 (기준서 1-2 ①). 패가 주인공이다.
@@ -77,7 +77,7 @@ export function PhaseSelect({ v }: { v: CBView }) {
           <header class="cb-panel-h">
             <span>보드 4 × 3</span>
             <span class={highlight.length ? 'cb-hl' : 'cb-dim'}>
-              {highlight.length ? `빗금 = ${cardLabel(hover!)} 가 닿는 칸` : '카드에 손을 올리면 닿는 칸이 보인다'}
+              {highlight.length ? `빗금 = ${cardLabel(hover!, cards)} 가 닿는 칸` : '카드에 손을 올리면 닿는 칸이 보인다'}
             </span>
           </header>
           <Board v={v} highlight={highlight} />
@@ -104,7 +104,7 @@ export function PhaseSelect({ v }: { v: CBView }) {
                       <>
                         <CardTile info={info} order={i + 1} onClick={() => toggle(id)} />
                         <div class="cb-slot-cap">
-                          <b>{cardLabel(id)}</b>
+                          <b>{info.name}</b>
                           <span class="cb-dim">
                             {info.type === 'attack' ? `기력 ${info.energyCost} · ${info.damage} 피해` : `기력 ${info.energyCost}`}
                           </span>
@@ -172,8 +172,8 @@ export function PhaseSelect({ v }: { v: CBView }) {
         {hoverInfo && !submitted && (
           <div class="cb-tip" role="tooltip">
             <div class="cb-tip-h">
-              <b>{cardLabel(hoverInfo.id)}</b>
-              <span class="cb-dim">{hoverInfo.type === 'attack' ? '이름 미정' : ''}</span>
+              <b>{hoverInfo.name}</b>
+              <span class="cb-slotcode">{slotCode(hoverInfo.id)}</span>
             </div>
             <div class="cb-tip-body">{cardEffect(hoverInfo)}</div>
             <div class="cb-tip-foot">

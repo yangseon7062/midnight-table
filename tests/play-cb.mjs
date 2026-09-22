@@ -67,6 +67,13 @@ await A.page.click('.cb-char:has-text("C1")');
 await sleep(250);
 const skillRows = await A.page.$$eval('.cb-skill', (n) => n.length);
 check(skillRows === 4, '고른 캐릭터의 기술 4장이 옆에 뜸');
+const c1Name = await A.page.$eval('.cb-detail-id', (n) => n.textContent.trim());
+check(c1Name === '하진', `상세 패널에 캐릭터 이름이 뜸 (${c1Name})`);
+const skillNames = await A.page.$$eval('.cb-skill-name b', (n) => n.map((e) => e.textContent.trim()));
+check(
+  skillNames.length === 4 && skillNames.every((t) => t && !/^C\d-[a-d]$/.test(t)),
+  `기술이 슬롯 표기가 아니라 이름으로 뜸 (${skillNames.join(' / ')})`,
+);
 const foeHidden = await B.page.$$eval('.cb-player.foe .cb-name', (n) => n[0]?.textContent ?? '');
 check(foeHidden === '???', '상대가 무엇을 골랐는지는 확정 전까지 안 보임');
 await A.page.click('.cb-detail-foot .cb-confirm');
@@ -79,6 +86,11 @@ await A.page.waitForSelector('.cb-phase-select', { timeout: 15000 });
 await sleep(400);
 const turnText = await A.page.$eval('.cb-turn', (n) => n.textContent.replace(/\s+/g, ' ').trim());
 check(/턴\s*1\s*\/\s*20/.test(turnText), `① 에 턴 수가 n / 20 으로 보임 (${turnText})`);
+const myName = await A.page.$eval('.cb-player.me .cb-name', (n) => n.textContent.trim());
+const foeName = await A.page.$eval('.cb-player.foe .cb-name', (n) => n.textContent.trim());
+check(myName === '하진' && foeName === '채령', `공개 뒤 양쪽 이름이 상단에 뜸 (${myName} / ${foeName})`);
+const tokens = await A.page.$$eval('.cb-token', (n) => n.map((e) => e.textContent.trim()));
+check(tokens.includes('하진') && tokens.includes('채령'), `보드 말에 이름이 들어감 (${tokens.join(' / ')})`);
 const handCount = await A.page.$$eval('.cb-row-tiles .cb-tile', (n) => n.length);
 check(handCount === 14, '손패 14장');
 const rowCount = await A.page.$$eval('.cb-row', (n) => n.length);

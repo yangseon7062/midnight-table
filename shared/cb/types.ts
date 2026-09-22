@@ -53,6 +53,8 @@ export interface MoveSpec {
 
 export interface CardDef {
   id: string;
+  /** 화면에 보여줄 이름. 카드 면에는 안 적고, 말풍선과 캡션에만 쓴다 (기준서 1-1) */
+  name: string;
   type: CardType;
   /** null = 모든 캐릭터가 쓰는 공용 카드 (이동 6 + 방어·보조 4) */
   characterId: string | null;
@@ -69,11 +71,18 @@ export interface CardDef {
 
 export interface CharacterDef {
   id: string;
-  /** 이름이 정해지기 전까지 쓰는 슬롯 표기 — 'C1' */
+  /** 슬롯 표기 — 'C1'. 기준서 9번 표와 대조할 때 쓴다 */
   label: string;
+  /** 이름 — '하진' */
+  name: string;
+  /** 이명 — '물길' */
+  alias: string;
+  weapon: string;
+  /** 한 줄 소개 */
+  intro: string;
   maxHp: number;
   maxEn: number;
-  /** 기준서 9번 표의 한 줄 성격 */
+  /** 기준서 9번 표의 한 줄 성격 (밸런스를 볼 때 쓰는 메모) */
   note: string;
   /** 고유 공격 카드 4장 */
   skillIds: readonly string[];
