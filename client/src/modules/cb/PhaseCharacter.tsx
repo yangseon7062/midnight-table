@@ -3,6 +3,7 @@ import type { CBView } from '@shared/cb/view';
 import { CardArt, RangeMini } from './CardArt';
 import { Hud } from './parts';
 import { CharMark } from './marks';
+import { Portrait } from './portraits';
 import { act, secondsLeft, slotCode, useNow } from './util';
 
 /**
@@ -68,7 +69,7 @@ export function PhaseCharacter({ v }: { v: CBView }) {
             <>
               <header class="cb-detail-h">
                 <div class="cb-detail-who">
-                  <span class="cb-detail-mark" aria-hidden="true"><CharMark characterId={detail.id} size={44} /></span>
+                  <span class="cb-detail-mark" aria-hidden="true"><Portrait characterId={detail.id} size={104} /></span>
                   <div>
                   <b class="cb-detail-id">{detail.name}</b>
                   <span class="cb-detail-alias">「{detail.alias}」</span>

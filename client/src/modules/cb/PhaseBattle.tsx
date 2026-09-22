@@ -1,7 +1,7 @@
 import { useMemo } from 'preact/hooks';
 import type { CBView } from '@shared/cb/view';
 import type { Pos, ResolveStep, Side } from '@shared/cb/types';
-import { Board, CardTile, Hud, type BoardFx, type SideFx } from './parts';
+import { Board, CardTile, Hud, type BoardFx, type SideFx, type StrikeFx } from './parts';
 import type { CBCardInfo } from '@shared/cb/view';
 import { cardLabel, cardMap, slotCode } from './util';
 
@@ -37,6 +37,7 @@ export function PhaseBattle({ v }: { v: CBView }) {
   const fx: BoardFx | undefined = useMemo(() => {
     if (!last) return undefined;
     const acc: Record<Side, SideFx> = { p1: {}, p2: {} };
+    const strikes: StrikeFx[] = [];
     for (const st of last.steps) {
       switch (st.kind) {
         case 'move': {
@@ -48,6 +49,10 @@ export function PhaseBattle({ v }: { v: CBView }) {
           const target: Side = st.side === 'p1' ? 'p2' : 'p1';
           if (st.hit) acc[target].dmg = (acc[target].dmg ?? 0) + st.dealt;
           else acc[target].miss = true;
+          // 때린 칸은 **그 슬롯이 끝난 뒤**의 자리다. 공격은 비공격 행동이 다 처리된
+          // 뒤에 판정되므로(기준서 6번), 뷰의 현재 위치가 곧 때린 자리다.
+          const me = st.side === 'p1' ? v.p1 : v.p2;
+          strikes.push({ from: me.pos, cells: st.cells, axis: axisOf(cards.get(st.cardId)?.range ?? null), hit: st.hit });
           break;
         }
         case 'heal':
@@ -63,8 +68,8 @@ export function PhaseBattle({ v }: { v: CBView }) {
           break;
       }
     }
-    return { slot: last.slot, p1: acc.p1, p2: acc.p2 };
-  }, [last]);
+    return { slot: last.slot, p1: acc.p1, p2: acc.p2, strikes };
+  }, [last, cards, v.p1.pos, v.p2.pos]);
 
   const caption = useMemo(() => {
     if (!last) return null;
@@ -179,6 +184,26 @@ function PickedRow({ v, side, title, mine }: { v: CBView; side: Side; title: str
       </div>
     </section>
   );
+}
+
+/**
+ * 사거리 패턴에서 자국의 방향을 뽑는다.
+ * 패턴을 그대로 그리면 격자와 겹쳐 지저분해진다 — 한 방이 **어느 쪽으로** 갔는지만 남긴다.
+ */
+function axisOf(range: CBCardInfo['range']): 'h' | 'v' | 'x' | 'all' {
+  if (!range) return 'h';
+  const on = (r: number, c: number) => range[r][c] === 1;
+  const filled = range.flat().filter((x) => x === 1).length;
+  if (filled >= 8) return 'all';
+  // 가로줄이 통째로 차 있으면 가로, 세로줄이면 세로
+  const row = [0, 1, 2].some((r) => on(r, 0) && on(r, 1) && on(r, 2));
+  const col = [0, 1, 2].some((c) => on(0, c) && on(1, c) && on(2, c));
+  if (row && col) return 'all';
+  if (row) return 'h';
+  if (col) return 'v';
+  // 대각선만 켜진 패턴 (X)
+  if (on(0, 0) && on(2, 2)) return 'x';
+  return 'h';
 }
 
 function describe(s: ResolveStep, mySide: Side, cards: Map<string, CBCardInfo>): string {

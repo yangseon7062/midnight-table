@@ -4,6 +4,7 @@ import type { Pos } from '@shared/cb/types';
 import { BOARD_COLS, BOARD_ROWS } from '@shared/cb/types';
 import { CardArt } from './CardArt';
 import { CharMark, weaponOf } from './marks';
+import { Portrait } from './portraits';
 import { samePos } from './util';
 
 /* ─────────────────────────────────────────────────────────────
@@ -58,6 +59,9 @@ function PlayerPanel({ p, side, v, pendingEn }: { p: CBPublicPlayer; side: 'me' 
     <div class={`cb-player ${side} ${p.side}`}>
       <div class="cb-player-top">
         <span class="cb-chip" />
+        {p.characterId && (
+          <span class="cb-face" aria-hidden="true"><Portrait characterId={p.characterId} size={46} /></span>
+        )}
         <b class="cb-name">{p.charName ?? '???'}</b>
         {p.charLabel && <span class="cb-slotcode">{p.charLabel}</span>}
         <span class="cb-role">{who} · {tag}</span>
@@ -109,11 +113,29 @@ export interface SideFx {
   guard?: 'guard' | 'perfect';
 }
 
+/**
+ * 이 슬롯의 타격. 어느 칸에 무엇이 닿았는지를 보드 위에 직접 그린다.
+ *
+ * 칸 색만 바뀌면 "저기가 범위였구나"만 남고 **무엇이 지나갔는지**가 안 보인다.
+ * 때린 사람 칸에서 닿은 칸 쪽으로 베는 자국이 퍼져야 한 방의 방향과 넓이가 읽힌다.
+ */
+export interface StrikeFx {
+  /** 때린 쪽의 칸 — 여기서부터 퍼진다 */
+  from: Pos;
+  /** 보드 안으로 잘린 실제 범위 칸 */
+  cells: readonly Pos[];
+  /** 사거리 패턴에서 뽑은 방향 — 자국의 각도를 정한다 */
+  axis: 'h' | 'v' | 'x' | 'all';
+  hit: boolean;
+}
+
 export interface BoardFx {
   /** 열린 슬롯 번호. 같은 자리에 머물러도 연출을 다시 트리거하려고 키에 섞는다 */
   slot: number;
   p1?: SideFx;
   p2?: SideFx;
+  /** 한 슬롯에 양쪽이 같이 때릴 수 있다 (기준서 6번의 동시 판정) */
+  strikes?: readonly StrikeFx[];
 }
 
 /** 칸 사이 간격 — CSS 의 gap 과 같아야 말이 칸에 정확히 앉는다 */
@@ -137,10 +159,58 @@ export function Board({ v, highlight, big, fx }: { v: CBView; highlight?: readon
   return (
     <div class={`cb-board ${big ? 'big' : ''}`}>
       {cells}
+      {fx?.strikes?.length ? (
+        <div class="cb-strikes">
+          {fx.strikes.map((st, i) =>
+            st.cells.map((c) => (
+              <Strike key={`${fx.slot}-${i}-${c.row}-${c.col}`} st={st} cell={c} big={big} />
+            )),
+          )}
+        </div>
+      ) : null}
       <div class="cb-tokens">
         <TokenSlot side="p1" v={v} big={big} fx={fx} together={together} />
         <TokenSlot side="p2" v={v} big={big} fx={fx} together={together} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * 한 칸에 남는 타격 자국. 때린 칸에서 멀수록 조금 늦게 뜬다 —
+ * 그래야 한 방이 바깥으로 퍼져 나간 것처럼 읽힌다.
+ */
+function Strike({ st, cell, big }: { st: StrikeFx; cell: Pos; big?: boolean }) {
+  const g = big ? GAP.big : GAP.small;
+  const dist = Math.abs(cell.row - st.from.row) + Math.abs(cell.col - st.from.col);
+  // 자기 칸(거리 0)은 자기가 안 맞으므로 자국을 옅게 둔다 (기준서 8번)
+  const self = dist === 0;
+  return (
+    <div
+      class={`cb-strike ${big ? 'big' : ''} ${st.hit ? 'hit' : 'miss'} ${self ? 'self' : ''}`}
+      style={{
+        transform: `translate(calc(${cell.col} * (100% + ${g}px)), calc(${cell.row} * (100% + ${g}px)))`,
+        animationDelay: `${Math.min(dist, 3) * 55}ms`,
+      }}
+    >
+      <svg viewBox="0 0 40 40" class="cb-strike-svg" aria-hidden="true">
+        {st.axis === 'h' && <path d="M2 20 L38 20" />}
+        {st.axis === 'v' && <path d="M20 2 L20 38" />}
+        {st.axis === 'x' && (
+          <>
+            <path d="M5 5 L35 35" />
+            <path d="M35 5 L5 35" />
+          </>
+        )}
+        {st.axis === 'all' && (
+          <>
+            <path d="M20 3 L20 37" />
+            <path d="M3 20 L37 20" />
+            <path d="M8 8 L32 32" />
+            <path d="M32 8 L8 32" />
+          </>
+        )}
+      </svg>
     </div>
   );
 }

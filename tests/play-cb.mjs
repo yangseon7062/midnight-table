@@ -58,7 +58,6 @@ await A.page.waitForSelector('.cb-root', { timeout: 15000 });
 check(true, '카드 대전 화면이 올라옴 (클라이언트 레지스트리 등록 확인)');
 await A.page.waitForSelector('.cb-phase-char', { timeout: 5000 });
 await sleep(400);
-await S(A.page, 'cb-10-character');
 
 log('⓪ 캐릭터 선택');
 const rosterCount = await A.page.$$eval('.cb-char', (n) => n.length);
@@ -69,6 +68,9 @@ const skillRows = await A.page.$$eval('.cb-skill', (n) => n.length);
 check(skillRows === 4, '고른 캐릭터의 기술 4장이 옆에 뜸');
 const seals = await A.page.$$eval('.cb-char-mark svg.cb-mark', (n) => n.length);
 check(seals === 8, `여덟 명 전부 인장(무기 문장)을 갖고 있음 (${seals}/8)`);
+const portrait = await A.page.$$eval('.cb-detail-mark svg.cb-portrait-svg', (n) => n.length);
+check(portrait === 1, '고른 캐릭터의 반신 초상이 상세에 뜸');
+await S(A.page, 'cb-10-character');
 const c1Name = await A.page.$eval('.cb-detail-id', (n) => n.textContent.trim());
 check(c1Name === '하진', `상세 패널에 캐릭터 이름이 뜸 (${c1Name})`);
 const skillNames = await A.page.$$eval('.cb-skill-name b', (n) => n.map((e) => e.textContent.trim()));
@@ -99,6 +101,8 @@ check(
 );
 const tokenMarks = await A.page.$$eval('.cb-token svg.cb-mark', (n) => n.length);
 check(tokenMarks === 2, `말 두 개 다 문장이 그려짐 (${tokenMarks}개)`);
+const faces = await A.page.$$eval('.cb-face svg.cb-portrait-svg', (n) => n.length);
+check(faces === 2, `상단 바 양쪽에 얼굴이 뜸 (${faces}개)`);
 const handCount = await A.page.$$eval('.cb-row-tiles .cb-tile', (n) => n.length);
 check(handCount === 14, '손패 14장');
 const rowCount = await A.page.$$eval('.cb-row', (n) => n.length);
@@ -147,14 +151,20 @@ log('말이 실제로 움직이는지 — 슬롯마다 자리가 갈린다');
 // 서버가 슬롯 단위로 상태를 내려주므로(frameOf), 슬롯이 넘어갈 때 말의 자리도 갈려야 한다.
 // 예전에는 공개가 시작되자마자 턴 끝 위치로 순간이동해서, 슬롯 1 을 보는 동안 이미
 // 슬롯 3 의 결과가 보드에 떠 있었다. 여기가 그 회귀를 잡는다.
+// 특정 시점을 찍지 않고 **계속 훑는다.** 슬롯은 1.5초 간격이고 A 가 낸 세 장은
+// [기술, 위로, 아래로] 라 슬롯 1 과 슬롯 3 의 자리가 같다 — 두 번만 찍으면
+// 하필 그 둘을 집어 "안 움직였다"로 보일 수 있다. 실제로 한 번 그렇게 걸렸다.
 const mySlot = '.cb-tokenslot:has(.cb-token[aria-label^="하진"])';
-const whereIsMine = () => A.page.$eval(mySlot, (n) => n.style.transform);
-const posSlot1 = await whereIsMine();
-// A 는 슬롯 2 에 「위로」를 냈다 — 다음 슬롯이 열리면 자리가 바뀐다
-await sleep(1900);
-const posSlot2 = await whereIsMine();
-check(!!posSlot1 && posSlot1 !== posSlot2, `슬롯이 넘어가면 말이 옮겨간다 (${posSlot1} → ${posSlot2})`);
-const hopped = await A.page.$$eval('.cb-hop.on', (n) => n.length);
+const seenPos = new Set();
+let hopped = 0;
+for (let i = 0; i < 26; i++) {
+  const t = await A.page.$eval(mySlot, (n) => n.style.transform).catch(() => null);
+  if (t) seenPos.add(t);
+  hopped = Math.max(hopped, await A.page.$$eval('.cb-hop.on', (n) => n.length));
+  if (!(await A.page.$('.cb-phase-battle'))) break;
+  await sleep(180);
+}
+check(seenPos.size >= 2, `슬롯이 넘어가면 말이 옮겨간다 (자리 ${seenPos.size}종: ${[...seenPos].join(' | ')})`);
 check(hopped >= 1, `움직인 말에 점프가 붙는다 (${hopped}개)`);
 await S(A.page, 'cb-15-move');
 
