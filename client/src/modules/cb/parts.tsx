@@ -91,11 +91,38 @@ function PlayerPanel({ p, side, v, pendingEn }: { p: CBPublicPlayer; side: 'me' 
 
 /* ─────────────────────────────────────────────────────────────
    보드 — 4열 × 3행. 한 칸에 둘이 같이 설 수 있다.
+
+   칸(격자)과 말(겹침 층)을 **따로** 그린다. 말을 칸 안에 넣으면 이동할 때
+   한 칸에서 사라지고 다른 칸에 생기므로 CSS 가 그 사이를 이어 줄 수가 없다.
+   겹침 층에 두고 transform 으로 옮기면 사이가 트랜지션으로 이어진다.
    ───────────────────────────────────────────────────────────── */
 
-export function Board({ v, highlight, big }: { v: CBView; highlight?: readonly Pos[]; big?: boolean }) {
+/** 한 슬롯에서 한 진영에 일어난 일 — 연출에만 쓴다. 판정은 이미 서버가 끝냈다. */
+export interface SideFx {
+  /** 점프 횟수. 기준서 3번: 1칸 한 번 / 2칸 두 번 / 막히면 제자리 한 번 */
+  hops?: number;
+  /** 이 슬롯에 받은 피해 */
+  dmg?: number;
+  miss?: boolean;
+  healed?: number;
+  energy?: number;
+  guard?: 'guard' | 'perfect';
+}
+
+export interface BoardFx {
+  /** 열린 슬롯 번호. 같은 자리에 머물러도 연출을 다시 트리거하려고 키에 섞는다 */
+  slot: number;
+  p1?: SideFx;
+  p2?: SideFx;
+}
+
+/** 칸 사이 간격 — CSS 의 gap 과 같아야 말이 칸에 정확히 앉는다 */
+const GAP = { small: 7, big: 10 };
+
+export function Board({ v, highlight, big, fx }: { v: CBView; highlight?: readonly Pos[]; big?: boolean; fx?: BoardFx }) {
   const cells = [];
   const hl = highlight ?? [];
+  const together = samePos(v.p1.pos, v.p2.pos);
   for (let row = 0; row < BOARD_ROWS; row++) {
     for (let col = 0; col < BOARD_COLS; col++) {
       const here: Pos = { row, col };
@@ -103,14 +130,65 @@ export function Board({ v, highlight, big }: { v: CBView; highlight?: readonly P
       const p2 = samePos(v.p2.pos, here);
       const inRange = hl.some((c) => samePos(c, here));
       cells.push(
-        <div key={`${row}-${col}`} class={`cb-cell ${inRange ? 'range' : ''} ${p1 ? 'p1' : ''} ${p2 ? 'p2' : ''}`}>
-          {p1 && <Marker side="p1" v={v} big={big} />}
-          {p2 && <Marker side="p2" v={v} big={big} />}
-        </div>,
+        <div key={`${row}-${col}`} class={`cb-cell ${inRange ? 'range' : ''} ${p1 ? 'p1' : ''} ${p2 ? 'p2' : ''}`} />,
       );
     }
   }
-  return <div class={`cb-board ${big ? 'big' : ''}`}>{cells}</div>;
+  return (
+    <div class={`cb-board ${big ? 'big' : ''}`}>
+      {cells}
+      <div class="cb-tokens">
+        <TokenSlot side="p1" v={v} big={big} fx={fx} together={together} />
+        <TokenSlot side="p2" v={v} big={big} fx={fx} together={together} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 말이 앉는 자리. 칸 하나와 같은 크기이고, transform 으로 칸 사이를 옮겨 다닌다.
+ * `100%` 가 제 폭(= 칸 폭)이라 `col × (100% + gap)` 이 칸에 정확히 맞는다.
+ */
+function TokenSlot({
+  side, v, big, fx, together,
+}: { side: 'p1' | 'p2'; v: CBView; big?: boolean; fx?: BoardFx; together: boolean }) {
+  const p = side === 'p1' ? v.p1 : v.p2;
+  const g = big ? GAP.big : GAP.small;
+  // 같은 칸에 둘이 서면 겹친다. 좌우로 조금씩 비켜 준다.
+  const off = big ? 17 : 12;
+  const nudge = together ? (side === 'p1' ? -off : off) : 0;
+  const mine = fx?.[side];
+  const hops = mine?.hops ?? 0;
+
+  // 자리가 바뀌면 키가 바뀌어 다시 마운트되고, 그때 점프가 돈다.
+  // 막혀서 제자리인 경우는 자리가 그대로라 슬롯 번호를 섞어 트리거한다 (기준서 3번).
+  const hopKey = `${p.pos.row}-${p.pos.col}-${hops ? fx?.slot ?? 0 : ''}`;
+  const hurt = !!mine?.dmg && mine.dmg > 0;
+
+  return (
+    <div
+      class={`cb-tokenslot ${big ? 'big' : ''}`}
+      style={{
+        transform: `translate(calc(${p.pos.col} * (100% + ${g}px) + ${nudge}px), calc(${p.pos.row} * (100% + ${g}px)))`,
+      }}
+    >
+      <span key={hopKey} class={`cb-hop ${hops === 2 ? 'twice' : ''} ${hops ? 'on' : ''}`}>
+        <Marker side={side} v={v} big={big} hurt={hurt} hurtKey={fx?.slot} />
+      </span>
+      {mine && <Floats fx={mine} slot={fx?.slot ?? 0} />}
+    </div>
+  );
+}
+
+/** 피해·회복·기력이 말 위로 떠오른다. 숫자만 바뀌는 것보다 어디서 일어났는지가 보인다. */
+function Floats({ fx, slot }: { fx: SideFx; slot: number }) {
+  const out = [];
+  if (fx.dmg !== undefined && fx.dmg > 0) out.push(<b key={`d${slot}`} class="cb-float dmg">−{fx.dmg}</b>);
+  else if (fx.miss) out.push(<b key={`m${slot}`} class="cb-float miss">빗나감</b>);
+  if (fx.healed) out.push(<b key={`h${slot}`} class="cb-float heal">+{fx.healed}</b>);
+  if (fx.energy) out.push(<b key={`e${slot}`} class="cb-float en">+{fx.energy}</b>);
+  if (fx.guard) out.push(<span key={`g${slot}`} class={`cb-shield ${fx.guard}`} aria-hidden="true" />);
+  return <>{out}</>;
 }
 
 /**
@@ -118,9 +196,11 @@ export function Board({ v, highlight, big }: { v: CBView; highlight?: readonly P
  *
  * 30px 원 안에서 여덟이 갈려야 하는데, 그 크기에서는 디테일이 아니라 덩어리 모양으로
  * 구별된다. 그래서 얼굴도 이름 글자도 아니라 무기다 — 문장 자체가 실루엣이다.
- * 이름은 `title` 로만 남긴다(마우스를 올리면 뜬다). 화면 곳곳에 이미 이름이 있다.
+ * 이름은 `title` 과 `aria-label` 로만 남긴다. 화면 곳곳에 이미 이름이 있다.
  */
-function Marker({ side, v, big }: { side: 'p1' | 'p2'; v: CBView; big?: boolean }) {
+function Marker({
+  side, v, big, hurt, hurtKey,
+}: { side: 'p1' | 'p2'; v: CBView; big?: boolean; hurt?: boolean; hurtKey?: number }) {
   const p = side === 'p1' ? v.p1 : v.p2;
   const me = v.me?.side === side;
   const who = me ? '나' : '상대';
@@ -128,7 +208,9 @@ function Marker({ side, v, big }: { side: 'p1' | 'p2'; v: CBView; big?: boolean 
   const weapon = weaponOf(p.characterId);
   return (
     <span
-      class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''}`}
+      // 맞을 때마다 다시 마운트돼 흔들림이 처음부터 돈다 (같은 슬롯에서 두 번 맞지는 않는다)
+      key={hurt ? `hurt-${hurtKey ?? 0}` : 'calm'}
+      class={`cb-token ${side} ${me ? 'mine' : ''} ${big ? 'big' : ''} ${hurt ? 'hurt' : ''}`}
       title={weapon ? `${name} · ${weapon} · ${who}` : `${name} · ${who}`}
       aria-label={`${name} (${who})`}
       role="img"

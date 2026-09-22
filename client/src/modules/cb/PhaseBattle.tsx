@@ -1,7 +1,7 @@
 import { useMemo } from 'preact/hooks';
 import type { CBView } from '@shared/cb/view';
 import type { Pos, ResolveStep, Side } from '@shared/cb/types';
-import { Board, CardTile, Hud } from './parts';
+import { Board, CardTile, Hud, type BoardFx, type SideFx } from './parts';
 import type { CBCardInfo } from '@shared/cb/view';
 import { cardLabel, cardMap, slotCode } from './util';
 
@@ -25,6 +25,45 @@ export function PhaseBattle({ v }: { v: CBView }) {
     if (!last) return [];
     const atk = last.steps.find((s): s is Extract<ResolveStep, { kind: 'attack' }> => s.kind === 'attack');
     return atk ? [...atk.cells] : [];
+  }, [last]);
+
+  /**
+   * 지금 열린 슬롯에서 각 진영에 일어난 일 — **연출 전용**이다.
+   * 판정은 서버가 이미 끝냈고, 여기서는 그 결과를 그림으로 옮기기만 한다.
+   *
+   * 뷰가 슬롯 단위로 걸어오므로(서버의 frameOf) 이 값도 슬롯마다 갈린다.
+   * 공격의 피해는 **맞은 쪽**에 붙인다 — 때린 쪽이 아니라 맞은 말이 흔들려야 한다.
+   */
+  const fx: BoardFx | undefined = useMemo(() => {
+    if (!last) return undefined;
+    const acc: Record<Side, SideFx> = { p1: {}, p2: {} };
+    for (const st of last.steps) {
+      switch (st.kind) {
+        case 'move': {
+          // 기준서 3번: 1칸 한 번 / 2칸 두 번 / 막히면 제자리 한 번
+          acc[st.side].hops = st.blocked && st.moved === 0 ? 1 : Math.max(1, st.moved);
+          break;
+        }
+        case 'attack': {
+          const target: Side = st.side === 'p1' ? 'p2' : 'p1';
+          if (st.hit) acc[target].dmg = (acc[target].dmg ?? 0) + st.dealt;
+          else acc[target].miss = true;
+          break;
+        }
+        case 'heal':
+          acc[st.side].healed = st.healed;
+          break;
+        case 'energy':
+          acc[st.side].energy = st.gained;
+          break;
+        case 'guard':
+          acc[st.side].guard = st.mode;
+          break;
+        default:
+          break;
+      }
+    }
+    return { slot: last.slot, p1: acc.p1, p2: acc.p2 };
   }, [last]);
 
   const caption = useMemo(() => {
@@ -56,7 +95,7 @@ export function PhaseBattle({ v }: { v: CBView }) {
             <span>보드 4 × 3</span>
             <span class="cb-dim">손패는 사라졌다 — 고른 3장만 아래에 남는다</span>
           </header>
-          <Board v={v} highlight={highlight} big />
+          <Board v={v} highlight={highlight} big fx={fx} />
           {caption && (
             <div class={`cb-caption ${caption.hit ? 'hit' : 'miss'}`}>
               <b>{cardLabel(caption.id, cards)}</b>

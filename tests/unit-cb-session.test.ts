@@ -222,6 +222,69 @@ section('서버 재시작 — 타이머 보정 (기준서 11-2)');
   }
 }
 
+/* ═══════════════════════ 슬롯 단위 공개 (기준서 5-2) ═══════════════════════ */
+section('공개는 슬롯 단위로 — 화면이 미리 앞서가지 않는다');
+{
+  // 서버는 세 슬롯을 한꺼번에 계산해 두고 슬롯 단위로 공개한다. 그래서 공개가 시작된
+  // 순간 서버의 p.pos 는 이미 **턴이 다 끝난** 자리다. 뷰가 그걸 그대로 내보내면
+  // 슬롯 1을 열자마자 보드가 턴 끝 위치로 순간이동한다 — 로그는 "슬롯 1 공개 중"인데
+  // 화면은 슬롯 3의 결과를 보여주는 셈이다. 이동 연출이 붙을 자리도 없어진다.
+  const { host, s } = pvpAtSelecting();
+  const start = { ...s.st.p1.pos };
+
+  // p1: 오른쪽 두 칸 → 기술 → 위로.  p2: 방어 → 아래 → 위
+  s.onAction('u1', 'submit', { cardIds: ['move_right2', 'c1_a', 'move_up'] });
+  s.onAction('u2', 'submit', { cardIds: ['guard', 'move_down', 'move_up'] });
+
+  const seen: { slot: number; row: number; col: number }[] = [];
+  for (let i = 0; i < 4; i++) {
+    const v = viewOf(s, 'u1');
+    if (v.phase === 'resolving') seen.push({ slot: v.revealed.length, row: v.p1.pos.row, col: v.p1.pos.col });
+    host.advance(s, 1600);
+  }
+
+  const bySlot = new Map(seen.map((x) => [x.slot, x]));
+  const s1 = bySlot.get(1), s3 = bySlot.get(3);
+  check(
+    !!s1 && s1.col === start.col + 2 && s1.row === start.row,
+    `슬롯 1 에서는 첫 장(오른쪽 두 칸)까지만 반영된다 (${s1?.row},${s1?.col})`,
+  );
+  check(
+    !!s3 && s3.row === start.row - 1 && s3.col === start.col + 2,
+    `슬롯 3 에서 비로소 마지막 장(위로)이 반영된다 (${s3?.row},${s3?.col})`,
+  );
+  check(
+    !!s1 && !!s3 && s1.row !== s3.row,
+    '슬롯 1 과 슬롯 3 의 화면이 실제로 다르다 — 미리 앞서가지 않는다',
+  );
+
+  // 체력도 같은 규칙이다. 슬롯마다 그 시점의 값이어야 피격 연출이 붙을 자리가 생긴다.
+  const hpSeen: number[] = [];
+  const { host: h2, s: s2 } = pvpAtSelecting();
+  // 같은 칸에 세워 두고 전 범위 기술을 맞춘다 — 슬롯 1 에서만 깎이게
+  s2.st.p2.pos = { ...s2.st.p1.pos };
+  s2.onAction('u1', 'submit', { cardIds: ['c1_a', 'move_up', 'move_down'] });
+  s2.onAction('u2', 'submit', { cardIds: ['energy_up', 'move_left', 'move_right'] });
+  for (let i = 0; i < 4; i++) {
+    const v = viewOf(s2, 'u1');
+    if (v.phase === 'resolving') hpSeen.push(v.p2.hp);
+    h2.advance(s2, 1600);
+  }
+  check(hpSeen.length >= 2, '공개 중 뷰를 여러 번 관찰했다');
+  check(
+    hpSeen[hpSeen.length - 1] === s2.st.p2.hp,
+    `마지막 슬롯의 체력은 서버의 최종값과 같다 (${hpSeen[hpSeen.length - 1]} / ${s2.st.p2.hp})`,
+  );
+
+  // 턴이 끝나 다시 선택 단계로 오면 live 상태가 그대로 나가야 한다
+  const v = viewOf(s, 'u1');
+  check(v.phase === 'selecting', '세 장을 다 열면 다음 턴 선택 단계');
+  check(
+    v.p1.pos.row === s.st.p1.pos.row && v.p1.pos.col === s.st.p1.pos.col,
+    '선택 단계에서는 뷰와 서버 상태가 일치한다',
+  );
+}
+
 /* ═══════════════════════ 끊김과 기권 (기준서 7-1 ③) ═══════════════════════ */
 section('끊김과 기권 (기준서 7-1 ③)');
 {

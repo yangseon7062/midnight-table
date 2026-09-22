@@ -7,6 +7,7 @@ import {
   TURN_LIMIT,
   type BattleState,
   type PlayerState,
+  type Pos,
   type Side,
 } from '../../../../shared/cb/types';
 import { aiContext } from './ai/context';
@@ -334,6 +335,7 @@ export class CardBattleSession implements GameSession {
     // 캐릭터는 둘 다 확정된 뒤에야 공개된다. 그 전에는 자기 것만 보인다.
     const shown = this.st.phase !== 'charSelect' || viewer === p.side;
     const info = this.infoOf(p.userId);
+    const f = this.frameOf(p.side);
     return {
       side: p.side,
       userId: p.userId,
@@ -345,13 +347,32 @@ export class CardBattleSession implements GameSession {
       charLabel: shown && p.characterId ? getCharacter(p.characterId).label : null,
       charLocked: p.charLocked,
       charAuto: shown ? p.charAuto : false,
-      hp: p.hp,
+      hp: f.hp,
       maxHp: maxHpOf(p),
-      en: p.en,
+      en: f.en,
       maxEn: maxEnOf(p),
-      pos: { ...p.pos },
+      pos: { ...f.pos },
       submitted: p.submission !== null,
     };
+  }
+
+  /**
+   * 지금 화면이 서 있어야 할 **시점**의 체력·기력·위치.
+   *
+   * 서버는 한 턴의 세 슬롯을 한꺼번에 계산해 두고 슬롯 단위로 공개한다(기준서 5-2).
+   * 그래서 공개가 시작된 순간 `p.pos` 는 이미 **턴이 다 끝난** 자리다. 그걸 그대로
+   * 내보내면 슬롯 1을 열자마자 보드가 턴 끝 위치로 순간이동하고 체력도 미리 깎인 채로
+   * 뜬다 — 로그는 "슬롯 1 공개 중"인데 화면은 슬롯 3의 결과를 보여주는 셈이다.
+   *
+   * 그래서 공개 중에는 **열린 슬롯까지의 상태**를 돌려준다. 뷰가 슬롯을 따라 한 칸씩
+   * 움직여야 연출(이동·피격)이 붙을 자리가 생긴다.
+   */
+  private frameOf(side: Side): { hp: number; en: number; pos: Pos } {
+    const p = playerOf(this.st, side);
+    const rv = this.st.reveal;
+    if (!rv || rv.results.length === 0) return { hp: p.hp, en: p.en, pos: p.pos };
+    const r = rv.results[Math.min(rv.slot, rv.results.length - 1)];
+    return { hp: r.hpAfter[side], en: r.enAfter[side], pos: r.posAfter[side] };
   }
 
   private meOf(viewer: Side): CBMeView {

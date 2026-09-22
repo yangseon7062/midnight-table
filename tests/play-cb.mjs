@@ -143,6 +143,21 @@ await S(A.page, 'cb-13-battle');
 const openedFirst = await A.page.$$eval('.cb-picked.me .cb-picked-one b', (n) => n.map((e) => e.textContent.trim()));
 check(openedFirst[1] === '뒷면' || openedFirst[2] === '뒷면', '아직 안 열린 슬롯은 뒷면으로 남아 있음');
 
+log('말이 실제로 움직이는지 — 슬롯마다 자리가 갈린다');
+// 서버가 슬롯 단위로 상태를 내려주므로(frameOf), 슬롯이 넘어갈 때 말의 자리도 갈려야 한다.
+// 예전에는 공개가 시작되자마자 턴 끝 위치로 순간이동해서, 슬롯 1 을 보는 동안 이미
+// 슬롯 3 의 결과가 보드에 떠 있었다. 여기가 그 회귀를 잡는다.
+const mySlot = '.cb-tokenslot:has(.cb-token[aria-label^="하진"])';
+const whereIsMine = () => A.page.$eval(mySlot, (n) => n.style.transform);
+const posSlot1 = await whereIsMine();
+// A 는 슬롯 2 에 「위로」를 냈다 — 다음 슬롯이 열리면 자리가 바뀐다
+await sleep(1900);
+const posSlot2 = await whereIsMine();
+check(!!posSlot1 && posSlot1 !== posSlot2, `슬롯이 넘어가면 말이 옮겨간다 (${posSlot1} → ${posSlot2})`);
+const hopped = await A.page.$$eval('.cb-hop.on', (n) => n.length);
+check(hopped >= 1, `움직인 말에 점프가 붙는다 (${hopped}개)`);
+await S(A.page, 'cb-15-move');
+
 log('다음 턴 — 실제 차감 확인');
 await A.page.waitForSelector('.cb-phase-select', { timeout: 20000 });
 await sleep(400);
